@@ -1,0 +1,13 @@
+{
+  "name": "<%- applicationName %>",
+  "version": "<%- applicationVersion %>",
+  "description": "<%- applicationDescription %>",
+  "license": "<%- applicationLicense %>",
+  "nativescript": {
+    "id": "<%- applicationId %>"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
