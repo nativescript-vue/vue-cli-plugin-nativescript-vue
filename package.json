@@ -1,0 +1,17 @@
+{
+  "name": "vue-cli-plugin-nativescript-vue",
+  "version": "0.0.1",
+  "description": "A vue cli 3.x plugin for NativeScript-Vue",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Igor Randjelovic",
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "nativescript-vue-template-compiler": "^1.3.1",
+    "rimraf": "^2.6.2"
+  }
+}
