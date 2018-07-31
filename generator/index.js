@@ -31,6 +31,7 @@ module.exports = (api, options, rootOptions) => {
     applicationDescription: api.generator.pkg.description || api.generator.pkg.name,
     applicationLicense: api.generator.pkg.license || 'MIT',
     applicationId: options.applicationId,
+    historyMode: options.historyMode || false,
   })
 
   // delete the "public" directory

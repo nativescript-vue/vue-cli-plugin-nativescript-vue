@@ -19,8 +19,7 @@ module.exports = (api, projectOptions) => {
     const vueRule = config.module.rule('vue').test(/\.vue$/)
 
     vueRule.use('vue-loader').tap(options => {
-      // todo fix typo when pr merged
-      options.compilerOpitons.compiler = require('nativescript-vue-template-compiler')
+      options.compilerOptions.compiler = require('nativescript-vue-template-compiler')
       options.compilerOptions = options.compilerOpitons
       delete options.compilerOpitons;
     })
