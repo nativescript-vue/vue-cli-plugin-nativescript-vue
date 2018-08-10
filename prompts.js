@@ -18,5 +18,11 @@ Example: com.company.app`
 
       return true;
     }
+  },
+  {
+    name: 'historyMode',
+    type: 'confirm',
+    message: 'Use HTML5 history mode? (Default: hash mode)',
+    default: false
   }
 ]
