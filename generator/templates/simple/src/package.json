@@ -3,7 +3,7 @@
     "v8Flags": "--expose_gc",
     "markingMode": "none"
   },
-  "main": "app.js",
+  "main": "main",
   "name": "<%- applicationName %>",
   "version": "<%- applicationVersion %>"
 }
