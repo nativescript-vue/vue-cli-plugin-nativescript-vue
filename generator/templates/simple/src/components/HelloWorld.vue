@@ -1,7 +1,10 @@
-<template>
+<template native>
     <GridLayout>
-        <Label class="message" :text="msg" row="0" />
+        <Label class="message" :text="msg" row="0" horizontalAlignment="center" verticalAlignment="center" />
     </GridLayout>
+</template>
+<template web>
+  <span>{{msg}}</span>
 </template>
 
 <script>
