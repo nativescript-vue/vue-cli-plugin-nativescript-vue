@@ -1,8 +1,21 @@
+const path = require('path');
+const fs = require('fs')
+const globby = require('globby');
+const rimraf = require('rimraf')
+const replace = require('replace-in-file');
+
 module.exports = (api, options, rootOptions) => {
-  const fs = require('fs')
-  const rimraf = require('rimraf')
-  const replace = require('replace-in-file');
-  const path = require('path');
+  
+  const commonRendorOptions = {
+    applicationName: api.generator.pkg.name,
+    applicationVersion: api.generator.pkg.version,
+    applicationAndroidVersionCode: api.generator.pkg.version.split('.').join('0'),
+    applicationDescription: api.generator.pkg.description || api.generator.pkg.name,
+    applicationLicense: api.generator.pkg.license || 'MIT',
+    applicationId: options.applicationId,
+    historyMode: options.historyMode || false,
+    doesCompile: api.hasPlugin('babel') || api.hasPlugin('typescript')
+  }
 
   console.log('adding to package.json');
 
@@ -61,55 +74,54 @@ module.exports = (api, options, rootOptions) => {
 
   console.log('doing template rendering');
 
-  api.render('./templates/simple', {
-    applicationName: api.generator.pkg.name,
-    applicationVersion: api.generator.pkg.version,
-    applicationAndroidVersionCode: api.generator.pkg.version.split('.').join('0'),
-    applicationDescription: api.generator.pkg.description || api.generator.pkg.name,
-    applicationLicense: api.generator.pkg.license || 'MIT',
-    applicationId: options.applicationId,
-    historyMode: options.historyMode || false,
-  })
+  // render the App_Resources files
+  api.render('./templates/App_Resources', commonRendorOptions)
 
-  console.log('onCreateComplete');
+  // use the answer from the invoke prompt and if it's a new project use the new template
+  // and if it is an existing project, use the existing template
+  if(options.isNewProject) {
+    api.render('./templates/simple/new', commonRendorOptions)
+  } else {
+    api.render('./templates/simple/existing', commonRendorOptions)
+  }
 
-  // delete the 'public' directory
   api.onCreateComplete(() => {
-    const newline = process.platform === 'win32' ? '\r\n' : '\n';
-    // // // const publicPath = api.resolve('public')
-    const webpackConfigFile = api.resolve('./webpack.config.js')
-    const main = api.resolve('src/main.js');
-    const gitignorePath = api.resolve('.gitignore')
 
+    const newline = process.platform === 'win32' ? '\r\n' : '\n';
+    const webpackConfigFile = api.resolve('./webpack.config.js');
+    const src = api.resolve('src');
+    const gitignorePath = api.resolve('.gitignore');
+
+    // // // // delete the 'public' directory
+    // // // const publicPath = api.resolve('public')
     // // // if(fs.existsSync(publicPath)) {
     // // //   rimraf.sync(publicPath)
     // // // }
 
-    // remove any webpack.config.js file that might already be there
+    // rename any webpack.config.js file that might already be there
     if(fs.existsSync(webpackConfigFile)) {
-      fs.unlink(webpackConfigFile, (err) => {
-        if (err) throw err;
-      });    }
-
-    // delete main.js
-     if(fs.existsSync(main)) {
-      fs.unlink(main, (err) => {
+      fs.rename(webpackConfigFile, './webpack.config.old', (err) => {
         if (err) throw err;
       });
-     }
+    }
+
+    // rename main.js to main.web.js
+    if(fs.existsSync(path.resolve(src, 'main.js'))) {
+      fs.rename(path.resolve(src, 'main.js'), path.resolve(src, 'main.web.js'), (err) => {
+        if (err) throw err;
+      });
+    }
 
     // setup string replacement options for babel.config.js file
-    if(fs.existsSync('./babel.config.js')) {
+    if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
       const replaceOptions = {
         files: './babel.config.js',
         from: '  \'@vue/app\'',
         to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
       }
-      replace(replaceOptions, (error, changes) => {
-        if (error) {
-          return console.error('Error occurred:', error);
-        }
-      })
+      replace(replaceOptions, (err, changes) => {
+        if (err) throw err;
+      });
     }
 
     // write out environmental files
@@ -120,12 +132,12 @@ module.exports = (api, options, rootOptions) => {
     const productionIOS = 'NODE_ENV=production' + newline + 'VUE_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
     const productionWeb = 'NODE_ENV=production' + newline + 'VUE_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
 
-    fs.writeFileSync('./.env.development.android', developmentAndroid, { encoding: 'utf8' })
-    fs.writeFileSync('./.env.development.ios', developmentIOS, { encoding: 'utf8' })
-    fs.writeFileSync('./.env.development.web', developmentWeb, { encoding: 'utf8' })
-    fs.writeFileSync('./.env.production.android', productionAndroid, { encoding: 'utf8' })
-    fs.writeFileSync('./.env.production.ios', productionIOS, { encoding: 'utf8' })
-    fs.writeFileSync('./.env.production.web', productionWeb, { encoding: 'utf8' })
+    fs.writeFileSync('./.env.development.android', developmentAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync('./.env.development.ios', developmentIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync('./.env.development.web', developmentWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync('./.env.production.android', productionAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync('./.env.production.ios', productionIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync('./.env.production.web', productionWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
 
 
     // write nsconfig.json
@@ -133,23 +145,26 @@ module.exports = (api, options, rootOptions) => {
       'appPath': 'src',
       'appResourcesPath': 'src/App_Resources'
     }
-    fs.writeFileSync('./nsconfig.json', JSON.stringify(nsconfig, null, 2), {encoding: 'utf8'});
+    fs.writeFileSync('./nsconfig.json', JSON.stringify(nsconfig, null, 2), {encoding: 'utf8'}, (err) => {if (err) throw err;});
 
     // write .gitignore additions
-    let gitignoreContent
+    let gitignoreContent;
 
     if (fs.existsSync(gitignorePath)) {
-      gitignoreContent = fs.readFileSync(gitignorePath, { encoding: 'utf8' })
+      gitignoreContent = fs.readFileSync(gitignorePath, { encoding: 'utf8' });
     } else {
-      gitignoreContent = ''
+      gitignoreContent = '';
     }
 
     const gitignoreAdditions = newline + '# NativeScript application' + newline + 'hooks' + newline + 'platforms'
     if (gitignoreContent.indexOf(gitignoreAdditions) === -1) {
       gitignoreContent += gitignoreAdditions
 
-      fs.writeFileSync(gitignorePath, gitignoreContent, { encoding: 'utf8' })
+      fs.writeFileSync(gitignorePath, gitignoreContent, { encoding: 'utf8' }, (err) => {if (err) throw err;});
     }
 
   })
+
+
+
 }

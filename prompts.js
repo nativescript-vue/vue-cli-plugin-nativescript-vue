@@ -24,5 +24,11 @@ Example: com.company.app`
     type: 'confirm',
     message: 'Use HTML5 history mode? (Default: hash mode)',
     default: false
+  },
+  {
+    name: 'isNewProject',
+    type: 'confirm',
+    message: 'Is this a brand new project? (Default: No)',
+    default: false
   }
 ]
