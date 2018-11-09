@@ -42,6 +42,24 @@ Example: com.company.app`
     type: 'confirm',
     message: 'Do you want to develop dual-use Web & Native components via Nativescript-Vue-Web? (Default: No)',
     default: false
-  }
+  },
+  {
+    name: 'templateType',
+    type: 'checkbox',
+    message: 'What type of template do you want to start with? (Default: Simple)',
+    choices: [
+      {
+        name: 'Simple',
+        value: 'simple',
+        checked: true
+      },
+      {
+        name: 'Sidebar (not yet implemented)',
+        value: 'sidebar',
+        disabled: true
+      }
+    ],
+    default: 'simple'
+  } 
 
 ]

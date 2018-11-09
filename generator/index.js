@@ -11,6 +11,32 @@ module.exports = (api, options, rootOptions) => {
 
   const newline = process.platform === 'win32' ? '\r\n' : '\n';
 
+  const srcfiles = [
+    'router.js',
+    'main.js',
+    'App.vue',
+    'views/About.vue',
+    'views/Home.vue',
+    'components/HelloWorld.vue',
+    'assets/logo.png'
+  ]
+
+  const appfiles = [
+    'package.json',
+    'main.js',
+    'App.native.vue',
+    'App.ios.vue',
+    'App.android.vue',
+    'views/About.native.vue',
+    'views/About.ios.vue',
+    'views/About.android.vue',
+    'views/Home.native.vue',
+    'views/Home.ios.vue',
+    'views/Home.android.vue',
+    'components/HelloWorld.native.vue',
+    'components/HelloWorld.ios.vue',
+    'components/HelloWorld.android.vue',
+  ]
 
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
   if(options.isNativeOnly && options.isNVW) {
@@ -96,9 +122,9 @@ module.exports = (api, options, rootOptions) => {
     delete pkg.scripts['build']
 
     if(options.isNativeOnly) {
-      delete pkg.dependencies['vue']
-      delete pkg.devDependencies['vue-template-compiler']
-      delete pkg.browserslist
+      // delete pkg.dependencies['vue']
+      // delete pkg.devDependencies['vue-template-compiler']
+      // delete pkg.browserslist
     }
 
   })
@@ -113,20 +139,12 @@ module.exports = (api, options, rootOptions) => {
 
     // New Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
-      api.render('./templates/simple/without-nvw/new', commonRenderOptions)
-  
-      if(api.hasPlugin('vue-router')){
-        api.injectImports('src/main.js', `import router from '~/router'`)
-        api.injectRootOptions('src/main.js', `router`)
-      }
-  
-      if(api.hasPlugin('vuex')){
-        api.injectImports('src/main.js', `import store from '~/store'`)
-        api.injectRootOptions('src/main.js', `store`)
-        api.injectImports('app/main.js', `import store from 'src/store'`)
-        api.injectRootOptions('app/main.js', `store`)
-  
-      }
+
+      renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './src/');
+      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
+
+      setupVueRouter(api, './');
+      setupVuex(api, './');
     } 
 
     // New Project and is using Nativescript-Vue-Web
@@ -136,7 +154,7 @@ module.exports = (api, options, rootOptions) => {
 
     // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      api.render('./templates/simple/native-only/new', commonRenderOptions);
+      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
     }
 
     if(options.isNativeOnly && options.isNVW) {
@@ -156,7 +174,11 @@ module.exports = (api, options, rootOptions) => {
 
     // Existing Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
-      api.render('./templates/simple/without-nvw/existing', commonRenderOptions)
+      renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './example/src/');
+      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './example/app/');
+
+      setupVueRouter(api, './example/');
+      setupVuex(api, './example/');
     } 
 
     // Existing Project and is using Nativescript-Vue-Web
@@ -166,7 +188,7 @@ module.exports = (api, options, rootOptions) => {
 
     // Existing Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      api.render('./templates/simple/native-only/existing', commonRenderOptions)
+      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './example/app/');
     }
 
     if(options.isNVW && options.isNativeOnly) {
@@ -297,6 +319,22 @@ module.exports = (api, options, rootOptions) => {
 }
 
 
+const setupVueRouter = module.exports.setupVueRouter = async (api, filePathPrepend) => {
+  if(api.hasPlugin('vue-router')){
+    api.injectImports(filePathPrepend + 'src/main.js', `import router from '~/router'`)
+    api.injectRootOptions(filePathPrepend + 'src/main.js', `router`)
+  }
+}
+
+const setupVuex = module.exports.setupVuex = async (api, filePathPrepend) => {
+  if(api.hasPlugin('vuex')){
+    api.injectImports(filePathPrepend + 'src/main.js', `import store from '~/store'`)
+    api.injectRootOptions(filePathPrepend + 'src/main.js', `store`)
+    api.injectImports(filePathPrepend + 'app/main.js', `import store from 'src/store'`)
+    api.injectRootOptions(filePathPrepend + 'app/main.js', `store`)
+  }
+}
+
 const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath) => {
 
   try {
@@ -315,11 +353,9 @@ const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath)
 }
 
 const copyDirs = module.exports.copyDirs = async (srcPath, destPath) => {  
-
   const baseDir = extractCallDir()
   const source = path.resolve(baseDir, srcPath)
   await fs.copy(source, destPath)
-
 }
 
   // extract callsite file location using error stack
@@ -327,4 +363,12 @@ const extractCallDir = module.exports.extractCallDir = () => {
   const obj = {}
   Error.captureStackTrace(obj)
   return path.dirname(obj.stack.split('\n')[3].match(/\s\((.*):\d+:\d+\)$/)[1])
+}
+
+const renderFilesIndividually = module.exports.renderFilesIndividually = async (api, files, commonRenderOptions, srcPathPrepend, destPathPrepend) => {
+  const obj = {}
+  for(let file of files)
+    obj[destPathPrepend + file] = srcPathPrepend + file;
+
+  api.render(obj, commonRenderOptions);
 }
