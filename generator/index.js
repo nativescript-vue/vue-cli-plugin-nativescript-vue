@@ -166,17 +166,17 @@ module.exports = (api, options, rootOptions) => {
     const gitignorePath = api.resolve('.gitignore');
     const gitignoreWebpackConfig = api.resolve('.webpack.config.js');
 
-    // setup string replacement options for babel.config.js file
-    if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
-      const replaceOptions = {
-        files: './babel.config.js',
-        from: '  \'@vue/app\'',
-        to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
-      }
-      replace(replaceOptions, (err, changes) => {
-        if (err) throw err;
-      });
-    }
+    // // setup string replacement options for babel.config.js file
+    // if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
+    //   const replaceOptions = {
+    //     files: './babel.config.js',
+    //     from: '  \'@vue/app\'',
+    //     to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
+    //   }
+    //   replace(replaceOptions, (err, changes) => {
+    //     if (err) throw err;
+    //   });
+    // }
 
 
     // for new projects that are native only, move files/dirs and delete others
