@@ -92,7 +92,15 @@ module.exports = (api, options, rootOptions) => {
     delete pkg.scripts['serve'],
     delete pkg.scripts['build']
 
+    if(options.isNativeOnly) {
+      delete pkg.dependencies['vue']
+      delete pkg.devDependencies['vue-template-compiler']
+      delete pkg.browserslist
+    }
+
   })
+
+
 
   console.log('doing template rendering');
 
