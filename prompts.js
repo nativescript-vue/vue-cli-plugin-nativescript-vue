@@ -29,7 +29,7 @@ Example: com.company.app`
     name: 'isNewProject',
     type: 'confirm',
     message: 'Is this a brand new project? (Default: No)',
-    default: true
+    default: false
   },
   {
     name: 'isNativeOnly',
