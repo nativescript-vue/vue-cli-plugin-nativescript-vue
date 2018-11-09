@@ -29,13 +29,13 @@ Example: com.company.app`
     name: 'isNewProject',
     type: 'confirm',
     message: 'Is this a brand new project? (Default: No)',
-    default: false
+    default: true
   },
   {
     name: 'isNativeOnly',
     type: 'confirm',
-    message: 'Is this for a Native only project and not also for browsers? (Default: Yes)',
-    default: true
+    message: 'Is this for a Native only project and not also for browsers? (Default: No)',
+    default: false
   },
   {
     name: 'isNVW',

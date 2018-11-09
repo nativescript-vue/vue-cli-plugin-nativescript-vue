@@ -9,6 +9,9 @@ module.exports = (api, options, rootOptions) => {
   console.log('options.isNVW - ', options.isNVW)
   console.log('options.isNewProject - ', options.isNewProject)
 
+  const newline = process.platform === 'win32' ? '\r\n' : '\n';
+
+
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
   if(options.isNativeOnly && options.isNVW) {
     throw Error('Invalid options chosen.  You cannot have a Native only project and use Nativescript-Vue-Web')
@@ -46,8 +49,8 @@ module.exports = (api, options, rootOptions) => {
       "setup-webpack-config": "node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre",
       "remove-webpack-config": "node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post",
       "serve:web": "vue-cli-service serve --mode development.web",
-      "serve:android": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle && npm run remove-webpack-config",
-      "serve:ios": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle && npm run remove-webpack-config",
+      "serve:android": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle",
+      "serve:ios": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle",
       "build:web": "vue-cli-service build --mode production.web",
       "build:android": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.android tns run android --bundle && npm run remove-webpack-config",
       "build:ios": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.ios tns run ios --bundle && npm run remove-webpack-config",
@@ -140,6 +143,14 @@ module.exports = (api, options, rootOptions) => {
       // should never reach this block of code
     }
   
+    // create the babel.config.js file
+    if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
+      applyBabelConfig(api, './babel.config.js');
+    }
+
+    // copy App_Resources to the ./app folder
+    copyDirs('./templates/App_Resources', './app/App_Resources')
+
 
   } else { // Exising Project
 
@@ -162,30 +173,52 @@ module.exports = (api, options, rootOptions) => {
       // should never reach this block of code
     }
 
+    // create the babel.config.js file
+    if(api.hasPlugin('babel') && fs.existsSync('./example/babel.config.js')) {
+      applyBabelConfig(api, './example/babel.config.js');
+    }
+
+    // copy App_Resources to the ./app folder
+    copyDirs('./templates/App_Resources', './example/app/App_Resources')
+
   }
 
-  
- 
 
- 
+
+
   api.onCreateComplete(() => {
 
-    const newline = process.platform === 'win32' ? '\r\n' : '\n';
     const gitignorePath = api.resolve('.gitignore');
-    const gitignoreWebpackConfig = api.resolve('.webpack.config.js');
 
-    // // setup string replacement options for babel.config.js file
-    // if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
-    //   const replaceOptions = {
-    //     files: './babel.config.js',
-    //     from: '  \'@vue/app\'',
-    //     to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
-    //   }
-    //   replace(replaceOptions, (err, changes) => {
-    //     if (err) throw err;
-    //   });
-    // }
+    // setup string replacement options for babel.config.js file
+    if(api.hasPlugin('babel') && fs.existsSync('./babel.config.js')) {
 
+      const replaceOptions = {
+        files: '',
+        from: '  \'@vue/app\'',
+        to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
+      }
+
+      // edit babel.config.js with options we need
+      if(options.isNewProject) {
+        replaceOptions.files = './babel.config.js';
+          replace(replaceOptions, (err, changes) => {
+          if (err) throw err;
+        });
+      } else {
+        replaceOptions.files = './example/babel.config.js';
+        fs.ensureFile(replaceOptions.files, err => {
+          if (err) throw err;
+          replace(replaceOptions, (err, changes) => {
+            if (err) throw err;
+          });
+        })
+
+      }
+
+    }
+
+   
 
     // for new projects that are native only, move files/dirs and delete others
     if(options.isNewProject && options.isNativeOnly) {
@@ -205,7 +238,13 @@ module.exports = (api, options, rootOptions) => {
         })
       })
 
+      // remove src directory as we don't need it
       fs.remove('./src', err => {
+        if (err) throw err
+      })
+
+      // remove public directory as we don't need it
+      fs.remove('./public', err => {
         if (err) throw err
       })
 
@@ -255,4 +294,37 @@ module.exports = (api, options, rootOptions) => {
 
   
 
+}
+
+
+const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath) => {
+
+  try {
+    api.render(files => {
+      files[filePath] = api.genJSConfig({
+        plugins: ["@babel/plugin-syntax-dynamic-import"],
+        presets: [
+          '@vue/app'
+        ]
+      })
+    })
+
+  } catch(err) {
+    throw err
+  }
+}
+
+const copyDirs = module.exports.copyDirs = async (srcPath, destPath) => {  
+
+  const baseDir = extractCallDir()
+  const source = path.resolve(baseDir, srcPath)
+  await fs.copy(source, destPath)
+
+}
+
+  // extract callsite file location using error stack
+const extractCallDir = module.exports.extractCallDir = () => {
+  const obj = {}
+  Error.captureStackTrace(obj)
+  return path.dirname(obj.stack.split('\n')[3].match(/\s\((.*):\d+:\d+\)$/)[1])
 }
