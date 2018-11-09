@@ -1,4 +1,6 @@
 const path = require('path')
+const fs = require('fs');
+const replace = require('replace-in-file');
 
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -12,10 +14,17 @@ const PlatformFSPlugin = nsWebpack.PlatformFSPlugin;
 const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
 const { NativeScriptWorkerPlugin } = require("nativescript-worker-loader/NativeScriptWorkerPlugin");
 
+const resolveExtensionsOptions = {
+  web: [ '.js', '.jsx', '.ts', '.tsx', '.vue', '.json' ],
+  android: [ '.native.js', '.andriod.js', '.js', '.native.ts', '.andriod.ts', '.ts', '.native.vue', '.andriod.vue', '.vue', '.json' ],
+  ios: [ '.native.js', '.ios.js', '.js', '.native.ts', '.ios.ts', '.ts', '.native.vue', '.ios.vue', '.vue', '.json' ],
+}
+
+
 module.exports = (api, projectOptions) => {
 
   const env = process.env.NODE_ENV;
-  const platform = process.env.VUE_PLATFORM //&& (process.env.VUE_PLATFORM && "android" || process.env.VUE_PLATFORM && "ios" || process.env.VUE_PLATFORM && "web");
+  const platform = process.env.VUE_APP_PLATFORM //&& (process.env.VUE_PLATFORM && "android" || process.env.VUE_PLATFORM && "ios" || process.env.VUE_PLATFORM && "web");
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
   process.env.VUE_APP_MODE = appMode;
   
@@ -23,7 +32,17 @@ module.exports = (api, projectOptions) => {
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, appMode) : nativeConfig(api, projectOptions, env, platform);
 
+
+
 }
+
+const resolveExtensions = (config, ext) => {
+  config
+  .resolve
+    .extensions
+      .add(ext)
+      .end()
+}  
 
 const nativeConfig = (api, projectOptions, env, platform) => {
   process.env.VUE_CLI_TARGET = 'nativescript'
@@ -33,14 +52,17 @@ const nativeConfig = (api, projectOptions, env, platform) => {
     "tns-core-modules/ui/frame/activity",
   ];
 
+  const platforms = ["ios", "android"];
+  const projectRoot = api.service.context;
+  const appResourcesPlatformDir = platform === "android" ? "Android" : "iOS";
   const tnsCorePath = api.resolve('node_modules/tns-core-modules')
 
   const {
     // The 'appPath' and 'appResourcesPath' values are fetched from
     // the nsconfig.json configuration file
     // when bundling with `tns run android|ios --bundle`.
-    appPath = api.resolve('src'),
-    appResourcesPath = path.join(appPath, './App_Resources'),
+    appPath = api.resolve('app'),
+    appResourcesPath = path.join(appPath, 'App_Resources'),
 
     // You can provide the following flags when running 'tns run android|ios'
     snapshot,
@@ -49,10 +71,8 @@ const nativeConfig = (api, projectOptions, env, platform) => {
     hmr, 
   } = env;  
 
-  const platforms = ["ios", "android"];
-  const appResourcesPlatformDir = platform === "android" ? "Android" : "iOS";
 
-  const appFullPath = appPath;
+  const appFullPath = appPath
   const appResourcesFullPath = appResourcesPath;
 
   const entryModule = nsWebpack.getEntryModule(appFullPath);
@@ -98,14 +118,24 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           .filename(`[name].js`)
           .end();
 
+
+       
+  config.resolve.extensions.clear();
+  resolveExtensions(config, '.scss');
+  resolveExtensions(config,'.css');
+
+  if(platform === 'android') {
+    for(let ext of resolveExtensionsOptions.android) {
+      resolveExtensions(config, ext);
+    }
+  } else {
+    for(let ext of resolveExtensionsOptions.ios) {
+      resolveExtensions(config, ext);
+    }
+  }
+
    config
         .resolve
-            .extensions
-                .add('.scss')
-                .add('.css')
-                .add('.android.js')
-                .add('.common.js')
-                .end()
             // Resolve {N} system modules from tns-core-modules
             .modules
                 .add(path.resolve(api.service.context, tnsCorePath))
@@ -115,7 +145,14 @@ const nativeConfig = (api, projectOptions, env, platform) => {
                 .end()
             .alias
                 .delete('vue$')
+                .delete('@')
+                .set('@', appFullPath)
                 .set('~', appFullPath)
+                .set('src', api.resolve('src'))
+                .set('assets', path.resolve(api.resolve('src'), 'assets'))
+                .set('components', path.resolve(api.resolve('src'), 'components'))
+                .set('fonts', path.resolve(api.resolve('src'), 'fonts'))
+                .set('root', projectRoot)
                 .set('vue$', 'nativescript-vue')
                 .end()
             .symlinks(false)  // don't resolve symlinks to symlinked modules
@@ -218,16 +255,6 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           }, {}))
           .before('string-replace-loader')
           .end()
-        .use('string-replace-loader')
-          .loader('string-replace-loader')
-          .options(Object.assign({
-            search: '<template web>[\\s\\S]*?<\/template>',
-            replace: '',
-            flags: 'gim',
-            strict: true
-          }, {}))
-          .end()
-
 
     // delete the js loader rule and rebuid it
     config.module.rules.delete('js')
@@ -318,7 +345,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           "global.TNS_WEBPACK": "true",
           'process.env': {
             "TNS_ENV": JSON.stringify(env),
-            'TNS_PLATFORM': JSON.stringify(platform),
+            'TNS_APP_PLATFORM': JSON.stringify(platform),
             'TNS_APP_MODE': JSON.stringify(process.env.VUE_APP_MODE)
           }
       }])
@@ -335,7 +362,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
         [{
           from: path.join(appResourcesFullPath, appResourcesPlatformDir),
           to: path.join(projectOptions.outputDir, 'App_Resources', appResourcesPlatformDir ),
-          context: api.service.context,
+          context: projectRoot,
         }]
       ])
       .end();
@@ -343,10 +370,11 @@ const nativeConfig = (api, projectOptions, env, platform) => {
     // Copy assets to out dir. Add your own globs as needed.
     config.plugin('copy-assets')
       .use(CopyWebpackPlugin, [[
-          { from: "fonts/**"},
-          { from: "**/*.+(jpg|png)"},
-          { from: "assets/**/*"},
-        ],{ ignore: [path.join(appResourcesFullPath, '**')]}
+          { from: {glob: path.resolve(api.resolve('src'), 'fonts/**')}, to: path.join(projectOptions.outputDir, 'fonts/' ), flatten: true},
+          { from: {glob: path.resolve(api.resolve('src'), '**/*.jpg')}, to: path.join(projectOptions.outputDir, 'assets' ), flatten: true},
+          { from: {glob: path.resolve(api.resolve('src'), '**/*.png')}, to: path.join(projectOptions.outputDir, 'assets/' ), flatten: true},
+          { from: {glob: path.resolve(api.resolve('src'), 'assets/**/*')}, to: path.join(projectOptions.outputDir, 'assets/'), flatten: true},
+        ],{ ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]}
       ])
       .end();
 
@@ -403,23 +431,40 @@ const nativeConfig = (api, projectOptions, env, platform) => {
     // // // })
   })
 
-  setupCommands(api);
 
 }
 
 const webConfig = (api, projectOptions, env, appMode) => {
 
+  const projectRoot = api.service.context;
+
   api.chainWebpack(config => {
 
     config.entry('app').clear()
-    config.entry('app').add(path.resolve(api.resolve('src'), 'main.web.js'));
+    config.entry('app').add(path.resolve(api.resolve('src'), 'main.js'));
 
     config
       .output
           .path(projectOptions.outputDir)
           .end();
 
-    config.resolve.alias.set('~', api.resolve('src'))
+    //config.resolve.alias.set('~', api.resolve('src'))
+
+    config.resolve.alias
+      .delete('@')
+      .set('@', api.resolve('src'))
+      .set('~', api.resolve('src'))
+      .set('assets', path.resolve(api.resolve('src'), 'assets'))
+      .set('components', path.resolve(api.resolve('src'), 'components'))
+      .set('fonts', path.resolve(api.resolve('src'), 'fonts'))
+      .set('root', projectRoot)
+      .end()
+
+    config.resolve.extensions.clear();
+  
+    for(let ext of resolveExtensionsOptions.web) {
+      resolveExtensions(config, ext);
+    }
 
     config.module
         .rule('vue')
@@ -436,22 +481,14 @@ const webConfig = (api, projectOptions, env, appMode) => {
                     //compiler: NsVueTemplateCompiler,
                 }, config.module.rule('vue').uses.get('vue-loader').get('options')))
                 .end()
-            .use('string-replace-loader')
-                .loader('string-replace-loader')
-                .options({
-                    search: '<template native>[\\s\\S]*?<\/template>',
-                    replace: '',
-                    flags: 'gim',
-                    strict: true,                 
-                })
 
     // Define useful constants like TNS_WEBPACK
     config.plugin('define')
       .use(DefinePlugin, [{
         'process.env': {
           "TNS_ENV": JSON.stringify(env),
-          'TNS_PLATFORM': JSON.stringify('web'),
-          'TNS_APP_MODE': JSON.stringify('web')
+          'TNS_APP_PLATFORM': JSON.stringify(process.env.VUE_APP_PLATFORM),
+          'TNS_APP_MODE': JSON.stringify(process.env.VUE_APP_MODE)
         }
       }])
       .end()
@@ -465,30 +502,31 @@ const webConfig = (api, projectOptions, env, appMode) => {
 }
 
 
-setupCommands = (api) => {
-  api.registerCommand('tns:dev', {
-    description: 'run nativescript cli commands',
-    usage: 'vue-cli-service tns [options]',
-    options: {
-      '--android': 'run in android emulator',
-      '--ios': 'run in ios simulator',
-      '--release': 'run in release mode',
-    }
-  }, args => { 
-    return require('./lib/commands/tns')(args, api)
-  })
 
-  api.registerCommand('tns:prod', {
-    description: 'run nativescript cli commands',
-    usage: 'vue-cli-service tns [options]',
-    options: {
-      '--android': 'run in android emulator',
-      '--ios': 'run in ios simulator',
-      '--release': 'run in release mode',
-    }
-  }, args => {
-    return require('./lib/commands/tns')(args, api)
-  })
+// setupCommands = (api) => {
+//   api.registerCommand('tns:dev', {
+//     description: 'run nativescript cli commands',
+//     usage: 'vue-cli-service tns [options]',
+//     options: {
+//       '--android': 'run in android emulator',
+//       '--ios': 'run in ios simulator',
+//       '--release': 'run in release mode',
+//     }
+//   }, args => { 
+//     return require('./lib/commands/tns')(args, api)
+//   })
+
+//   api.registerCommand('tns:prod', {
+//     description: 'run nativescript cli commands',
+//     usage: 'vue-cli-service tns [options]',
+//     options: {
+//       '--android': 'run in android emulator',
+//       '--ios': 'run in ios simulator',
+//       '--release': 'run in release mode',
+//     }
+//   }, args => {
+//     return require('./lib/commands/tns')(args, api)
+//   })
 
   // // NOT IMPLEMENTED AT ALL
   // api.registerCommand('tns:snapshot', {
@@ -515,4 +553,4 @@ setupCommands = (api) => {
   // }, args => { 
   //   return require('./lib/commands/tns')(args, api)
   // })
-}
+//}

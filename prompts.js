@@ -29,6 +29,19 @@ Example: com.company.app`
     name: 'isNewProject',
     type: 'confirm',
     message: 'Is this a brand new project? (Default: No)',
+    default: true
+  },
+  {
+    name: 'isNativeOnly',
+    type: 'confirm',
+    message: 'Is this for a Native only project and not also for browsers? (Default: Yes)',
+    default: true
+  },
+  {
+    name: 'isNVW',
+    type: 'confirm',
+    message: 'Do you want to develop dual-use Web & Native components via Nativescript-Vue-Web? (Default: No)',
     default: false
   }
+
 ]
