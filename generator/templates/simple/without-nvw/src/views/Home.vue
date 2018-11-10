@@ -1,4 +1,4 @@
-<%_ if (rootOptions.router) { _%>
+<%_ if (rootOptions.router && !usingTS) { _%>
 <template>
   <div class="w-page">
     <div class="w-container">
@@ -7,8 +7,9 @@
     </div>
   </div>
 </template>
+<%_ } _%>
+<%_ if (rootOptions.router && !usingTS) { _%>
 <script>
-  // ~ is an alias to /src
   import HelloWorld from 'components/HelloWorld'
 
   export default {
@@ -23,6 +24,23 @@
     },  
   }
 </script>
+<%_ } else if (rootOptions.router && usingTS){ _%>
+<script lang="ts">
+  import HelloWorld from 'components/HelloWorld'
+
+  export default {
+    name: 'home',
+    components: {
+      HelloWorld
+    },
+    data() {
+      return {
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
+      }
+    },  
+  }
+</script>
+<%_ } else { _%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>

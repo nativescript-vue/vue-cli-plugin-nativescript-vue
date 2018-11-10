@@ -3,26 +3,21 @@ const fs = require('fs-extra');
 const replace = require('replace-in-file');
 
 const newline = process.platform === 'win32' ? '\r\n' : '\n';
-const babelReplaceOptions = {
-  files: '',
-  from: '  \'@vue/app\'',
-  to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
-}
-
-
-
 
 module.exports = (api, options, rootOptions) => {
 
   console.log('options.isNativeOnly - ', options.isNativeOnly)
   console.log('options.isNVW - ', options.isNVW)
   console.log('options.isNewProject - ', options.isNewProject)
+  console.log('usingTS - ', api.hasPlugin('typescript'))
+  console.log('usingBabel - ', api.hasPlugin('babel'))
 
   const existingDirPath = './example/';
+  const jsOrTs = api.hasPlugin('typescript') ? 'ts' : 'js'
 
   const srcfiles = [
-    'router.js',
-    'main.js',
+    'router.' + jsOrTs,
+    'main.' + jsOrTs,
     'App.vue',
     'views/About.vue',
     'views/Home.vue',
@@ -32,7 +27,7 @@ module.exports = (api, options, rootOptions) => {
 
   const appfiles = [
     'package.json',
-    'main.js',
+    'main.' + jsOrTs,
     'App.native.vue',
     'App.ios.vue',
     'App.android.vue',
@@ -152,8 +147,8 @@ module.exports = (api, options, rootOptions) => {
       renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './src/');
       renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
 
-      vueRouterSetup(api, './');
-      vuexSetup(api, './');
+      vueRouterSetup(api, './', jsOrTs);
+      vuexSetup(api, './', jsOrTs);
     } 
 
     // New Project and is using Nativescript-Vue-Web
@@ -187,8 +182,8 @@ module.exports = (api, options, rootOptions) => {
       renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', existingDirPath + 'src/');
       renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
 
-      vueRouterSetup(api, existingDirPath);
-      vuexSetup(api, existingDirPath);
+      vueRouterSetup(api, existingDirPath, jsOrTs);
+      vuexSetup(api, existingDirPath, jsOrTs);
     } 
 
     // Existing Project and is using Nativescript-Vue-Web
@@ -224,6 +219,11 @@ module.exports = (api, options, rootOptions) => {
       writeEnvFiles('./')
       nsconfigSetup(api.resolve('nsconfig.json'));
 
+      if(hasPlugin('typescript')) {
+        tsconfigSetup(api.resolve('tsconfig.json'));
+        tslintSetup(api.resolve('tslint.json'));
+      }
+
       // for new projects that are native only, move files/dirs and delete others
       if (options.isNativeOnly) {
         // move store.js file from ./src to ./app
@@ -257,6 +257,13 @@ module.exports = (api, options, rootOptions) => {
       writeEnvFiles(existingDirPath)
       nsconfigSetup(api.resolve(existingDirPath + 'nsconfig.json'));
 
+      if(hasPlugin('typescript')) {
+        tsconfigSetup(api.resolve(existingDirPath + 'tsconfig.json'));
+        tslintSetup(api.resolve(existingDirPath + 'tslint.json'));
+      
+      }
+
+
       // for existing projects that are native only, try and copy items from src
       // but do not delete anythign in src.
       if (options.isNativeOnly) {
@@ -283,11 +290,11 @@ module.exports = (api, options, rootOptions) => {
 
 // setup vue-router options
 // will not setup any vue-router options for native app
-const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrepend) => {
+const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrepend, jsOrTs) => {
   try {
     if(api.hasPlugin('vue-router')){
-      api.injectImports(filePathPrepend + 'src/main.js', `import router from '~/router'`)
-      api.injectRootOptions(filePathPrepend + 'src/main.js', `router`)
+      api.injectImports(filePathPrepend + 'src/main' + jsOrTs, `import router from '~/router'`)
+      api.injectRootOptions(filePathPrepend + 'src/main' + jsOrTs, `router`)
     }
   } catch(err) {
     throw err
@@ -296,13 +303,13 @@ const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrepe
 }
 
 // setup Vuex
-const vuexSetup = module.exports.vuexSetup = async (api, filePathPrepend) => {
+const vuexSetup = module.exports.vuexSetup = async (api, filePathPrepend, jsOrTs) => {
   try {
     if(api.hasPlugin('vuex')){
-      api.injectImports(filePathPrepend + 'src/main.js', `import store from '~/store'`)
-      api.injectRootOptions(filePathPrepend + 'src/main.js', `store`)
-      api.injectImports(filePathPrepend + 'app/main.js', `import store from 'src/store'`)
-      api.injectRootOptions(filePathPrepend + 'app/main.js', `store`)
+      api.injectImports(filePathPrepend + 'src/main' + jsOrTs, `import store from '~/store'`)
+      api.injectRootOptions(filePathPrepend + 'src/main' + jsOrTs, `store`)
+      api.injectImports(filePathPrepend + 'app/main' + jsOrTs, `import store from 'src/store'`)
+      api.injectRootOptions(filePathPrepend + 'app/main' + jsOrTs, `store`)
     }
   } catch(err) {
     throw err
@@ -312,6 +319,13 @@ const vuexSetup = module.exports.vuexSetup = async (api, filePathPrepend) => {
 
 // write out babel.config.js options
 const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath) => {
+
+  const babelReplaceOptions = {
+    files: '',
+    from: '  \'@vue/app\'',
+    to: '  process.env.VUE_PLATFORM === \'web\' ? \'@vue/app\' : {}, ' + newline + '    [\'@babel/env\', { targets: { esmodules: true } }]',
+  }
+
   try {
 
     babelReplaceOptions.files = filePath;
@@ -401,6 +415,72 @@ const nsconfigSetup = module.exports.nsconfigSetup = async (nsconfigPath) => {
     nsconfigContent.appResourcesPath = 'app/App_Resources'
 
     fs.writeFileSync(nsconfigPath, JSON.stringify(nsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
+      if (err) console.error(err)
+    });
+
+    
+  } catch(err) {
+    throw err
+  }
+
+}
+
+// setup tsconfigSetup
+const tsconfigSetup = module.exports.tsconfigSetup = async (tsconfigPath) => {
+  let tsconfigContent = '';
+
+  try {
+    if (fs.existsSync(tsconfigPath)) {
+      tsconfigContent = JSON.parse(fs.readFileSync(tsconfigPath, { encoding: 'utf8' }));
+    } else {
+      tsconfigContent = {};
+    }
+
+    delete tsconfigContent.paths['@/*'];
+    tsconfigContent.paths['~/*'] = "src/*";
+    tsconfigContent.paths['src/*'] = "src/*";
+    tsconfigContent.paths['assets/*'] = "src/assets/*";
+    tsconfigContent.paths['fonts/*'] = "src/fonts/*";
+    tsconfigContent.paths['root/*'] = "/*";
+    tsconfigContent.paths['components/*'] = "/src/components*";
+
+    tsconfigContent.include.push['app/**/*.ts'];
+    tsconfigContent.include.push['app/**/*.tsx'];
+    tsconfigContent.include.push['app/**/*.vue'];
+
+    tsconfigContent.exclude.push['platforms'];
+    tsconfigContent.exclude.push['hooks'];
+
+    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
+      if (err) console.error(err)
+    });
+
+    
+  } catch(err) {
+    throw err
+  }
+
+}
+
+// setup tslintSetup
+const tslintSetup = module.exports.tslintSetup = async (tslintPath) => {
+  let tslintContent = '';
+
+  try {
+    if (fs.existsSync(tslintPath)) {
+      tslintContent = JSON.parse(fs.readFileSync(tslintPath, { encoding: 'utf8' }));
+    } else {
+      return;
+    }
+
+    tslintContent.linterOptions.exclude.push['platforms/**'];
+    tslintContent.linterOptions.exclude.push['hooks/**'];
+
+    tslintContent.exclude.push['platforms'];
+    tslintContent.exclude.push['hooks'];
+
+
+    fs.writeFileSync(tslintPath, JSON.stringify(tslintContent, null, 2), {encoding: 'utf8'}, (err) => {
       if (err) console.error(err)
     });
 

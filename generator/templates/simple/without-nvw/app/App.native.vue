@@ -10,7 +10,94 @@
     </GridLayout>
   </Page>
 </template>
+<%_ } else { _%>
+<template>
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+        <Button text="Home" @tap="goToHomePage" row="0"/>
+        <Button text="About" @tap="goToAboutPage" row="1"/>
+    </GridLayout>
+  </Page>
+</template>
+<%_ } _%>
+
+<%_ if (!rootOptions.router && !usingTS) { _%>
 <script>
+  // ~ is an alias to /src
+  import Home from '~/views/Home';
+  import About from '~/views/About';
+
+  export default {
+
+    data() {
+      return {
+        navbarTitle: 'App.native.vue',
+      }
+    },    
+    methods: {
+      goToHomePage() {
+        this.$navigateTo(Home);
+      },
+      goToAboutPage() {
+        this.$navigateTo(About);
+      }
+    }
+  }
+
+</script>
+<%_ } else if (!rootOptions.router && usingTS) { _%>
+<script lang="ts">
+  // ~ is an alias to /src
+  import Home from '~/views/Home';
+  import About from '~/views/About';
+
+  export default {
+
+    data() {
+      return {
+        navbarTitle: 'App.native.vue',
+      }
+    },    
+    methods: {
+      goToHomePage() {
+        this.$navigateTo(Home);
+      },
+      goToAboutPage() {
+        this.$navigateTo(About);
+      }
+    }
+  }
+
+</script>
+<%_ } else if (rootOptions.router && !usingTS){ _%>
+<script>
+
+  // ~ is an alias to /src
+  import Home from '~/views/Home';
+  import About from '~/views/About';
+
+  export default {
+
+    data() {
+      return {
+        navbarTitle: 'App.native.vue',
+      }
+    },    
+    methods: {
+      goToHomePage() {
+        this.$navigateTo(Home);
+      },
+      goToAboutPage() {
+        this.$navigateTo(About);
+      }
+    }
+  }
+
+</script>
+<%_ } else if (rootOptions.router && usingTS){ _%>
+<script lang="ts">
+
   // ~ is an alias to /src
   import Home from '~/views/Home';
   import About from '~/views/About';
@@ -34,41 +121,8 @@
 
 </script>
 <%_ } else { _%>
-<%# This code is the same as not having a router. #%>
-<%# See note above #%>
-<template>
-  <Page>
-    <ActionBar :title="navbarTitle"/>
-    <GridLayout rows="auto, auto">
-        <Button text="Home" @tap="goToHomePage" row="0"/>
-        <Button text="About" @tap="goToAboutPage" row="1"/>
-    </GridLayout>
-  </Page>
-</template>
-<script>
-  // ~ is an alias to /src
-  import Home from '~/views/Home';
-  import About from '~/views/About';
-
-  export default {
-
-    data() {
-      return {
-        navbarTitle: 'App.native.vue',
-      }
-    },    
-    methods: {
-      goToHomePage() {
-        this.$navigateTo(Home);
-      },
-      goToAboutPage() {
-        this.$navigateTo(About);
-      }
-    }
-  }
-
-</script>
 <%_ } _%>
+
 
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
 <style<%-

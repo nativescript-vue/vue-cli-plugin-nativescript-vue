@@ -9,6 +9,9 @@
     </GridLayout>
     </Page>
 </template>
+<%_ } _%>
+
+<%_ if (rootOptions.router && !usingTS) { _%>
 <script>
   //aliased to src/components
   import HelloWorld from '~/components/HelloWorld'
@@ -26,6 +29,25 @@
     },  
   }
 </script>
+<%_ } else if (rootOptions.router && usingTS){ _%>
+<script lang="ts">
+  //aliased to src/components
+  import HelloWorld from '~/components/HelloWorld'
+
+  export default {
+    name: 'home',
+    components: {
+      HelloWorld
+    },
+    data() {
+      return {
+        navbarTitle: 'Home.ios.vue',
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
+      }
+    },  
+  }
+</script>
+<%_ } else { _%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>

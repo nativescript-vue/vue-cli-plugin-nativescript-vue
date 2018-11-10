@@ -1,4 +1,4 @@
-<%_ if (rootOptions.router) { _%>
+<%_ if (rootOptions.router && !usingTS) { _%>
 <template>
     <Page>
         <ActionBar :title="navbarTitle"/>
@@ -7,8 +7,11 @@
         </GridLayout>
     </Page>
 </template>
+<%_ } _%>
+
+<%_ if (rootOptions.router && !usingTS) { _%>
 <script>
-export default {
+  export default {
 
     data() {
       return {
@@ -17,4 +20,17 @@ export default {
     },    
   }
 </script>
+<%_ } else if (rootOptions.router && usingTS) { _%>
+<script lang="ts">
+  export default {
+
+    data() {
+      return {
+        navbarTitle: 'About.native.vue',
+      }
+    },
+  }
+</script>
+<%_ } else { _%>
 <%_ } _%>
+
