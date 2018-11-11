@@ -12,12 +12,12 @@ module.exports = (api, options, rootOptions) => {
   console.log('usingTS - ', api.hasPlugin('typescript'))
   console.log('usingBabel - ', api.hasPlugin('babel'))
 
-  const existingDirPath = './example/';
-  const jsOrTs = api.hasPlugin('typescript') ? 'ts' : 'js'
+  const existingDirPath = './ns-example/';
+  const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js'
 
   const srcfiles = [
-    'router.' + jsOrTs,
-    'main.' + jsOrTs,
+    'router.js',
+    'main.js',
     'App.vue',
     'views/About.vue',
     'views/Home.vue',
@@ -27,7 +27,7 @@ module.exports = (api, options, rootOptions) => {
 
   const appfiles = [
     'package.json',
-    'main.' + jsOrTs,
+    'main.js',
     'App.native.vue',
     'App.ios.vue',
     'App.android.vue',
@@ -97,8 +97,18 @@ module.exports = (api, options, rootOptions) => {
       'nativescript-vue-template-compiler': '^2.0.2',
       'nativescript-worker-loader': '~0.9.1',
       'replace-in-file': '^3.4.2',
+      'tns-platform-declarations': '^5.0.2',
     }
   })
+
+  if(api.hasPlugin('typescript')) {
+    // api.extendPackage({
+    //   dependencies: {
+    //   },
+    //   devDependencies: {
+    //   }
+    // })
+  }
 
   // if the project is using babel, then load appropriate packages
   if(api.hasPlugin('babel')) {
@@ -144,8 +154,8 @@ module.exports = (api, options, rootOptions) => {
     // New Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
 
-      renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './src/');
-      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
+      renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './src/');
+      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
 
       vueRouterSetup(api, './', jsOrTs);
       vuexSetup(api, './', jsOrTs);
@@ -158,7 +168,7 @@ module.exports = (api, options, rootOptions) => {
 
     // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
+      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
     }
 
     if(options.isNativeOnly && options.isNVW) {
@@ -179,8 +189,8 @@ module.exports = (api, options, rootOptions) => {
 
     // Existing Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
-      renderFilesIndividually(api, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', existingDirPath + 'src/');
-      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
+      renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', existingDirPath + 'src/');
+      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
 
       vueRouterSetup(api, existingDirPath, jsOrTs);
       vuexSetup(api, existingDirPath, jsOrTs);
@@ -193,7 +203,7 @@ module.exports = (api, options, rootOptions) => {
 
     // Existing Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      renderFilesIndividually(api, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
+      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
     }
 
     if(options.isNVW && options.isNativeOnly) {
@@ -217,11 +227,11 @@ module.exports = (api, options, rootOptions) => {
 
     if(options.isNewProject) {
       writeEnvFiles('./')
-      nsconfigSetup(api.resolve('nsconfig.json'));
+      nsconfigSetup('./', api.resolve('nsconfig.json'));
 
-      if(hasPlugin('typescript')) {
-        tsconfigSetup(api.resolve('tsconfig.json'));
-        tslintSetup(api.resolve('tslint.json'));
+      if(api.hasPlugin('typescript')) {
+        tsconfigSetup(api, './', api.resolve('tsconfig.json'));
+        tslintSetup('./', api.resolve('tslint.json'));
       }
 
       // for new projects that are native only, move files/dirs and delete others
@@ -255,12 +265,11 @@ module.exports = (api, options, rootOptions) => {
 
     } else {
       writeEnvFiles(existingDirPath)
-      nsconfigSetup(api.resolve(existingDirPath + 'nsconfig.json'));
+      nsconfigSetup(existingDirPath, api.resolve('nsconfig.json'));
 
-      if(hasPlugin('typescript')) {
-        tsconfigSetup(api.resolve(existingDirPath + 'tsconfig.json'));
-        tslintSetup(api.resolve(existingDirPath + 'tslint.json'));
-      
+      if(api.hasPlugin('typescript')) {
+        tsconfigSetup(api, existingDirPath, api.resolve('tsconfig.json'));
+        tslintSetup(existingDirPath, api.resolve('tslint.json'));
       }
 
 
@@ -401,7 +410,7 @@ const gitignoreAdditions = module.exports.gitignoreAdditions = async (api) => {
 }
 
 // setup nsconfig.json file
-const nsconfigSetup = module.exports.nsconfigSetup = async (nsconfigPath) => {
+const nsconfigSetup = module.exports.nsconfigSetup = async (existingDirPath, nsconfigPath) => {
   let nsconfigContent = '';
 
   try {
@@ -414,7 +423,7 @@ const nsconfigSetup = module.exports.nsconfigSetup = async (nsconfigPath) => {
     nsconfigContent.appPath = 'app';
     nsconfigContent.appResourcesPath = 'app/App_Resources'
 
-    fs.writeFileSync(nsconfigPath, JSON.stringify(nsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
+    fs.writeFileSync(existingDirPath + 'nsconfig.json', JSON.stringify(nsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
       if (err) console.error(err)
     });
 
@@ -426,32 +435,29 @@ const nsconfigSetup = module.exports.nsconfigSetup = async (nsconfigPath) => {
 }
 
 // setup tsconfigSetup
-const tsconfigSetup = module.exports.tsconfigSetup = async (tsconfigPath) => {
-  let tsconfigContent = '';
+const tsconfigSetup = module.exports.tsconfigSetup = async (api, existingDirPath, tsconfigPath) => {
+  let tsconfigContent = {};
 
   try {
+
     if (fs.existsSync(tsconfigPath)) {
-      tsconfigContent = JSON.parse(fs.readFileSync(tsconfigPath, { encoding: 'utf8' }));
+      tsconfigContent = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
     } else {
       tsconfigContent = {};
     }
 
-    delete tsconfigContent.paths['@/*'];
-    tsconfigContent.paths['~/*'] = "src/*";
-    tsconfigContent.paths['src/*'] = "src/*";
-    tsconfigContent.paths['assets/*'] = "src/assets/*";
-    tsconfigContent.paths['fonts/*'] = "src/fonts/*";
-    tsconfigContent.paths['root/*'] = "/*";
-    tsconfigContent.paths['components/*'] = "/src/components*";
+    delete tsconfigContent.compilerOptions.paths['@/*'];
+    tsconfigContent.compilerOptions.paths['~/*'] = ["src/*"];
+    tsconfigContent.compilerOptions.paths['src/*'] = ["src/*"];
+    tsconfigContent.compilerOptions.paths['assets/*'] = ["src/assets/*"];
+    tsconfigContent.compilerOptions.paths['fonts/*'] = ["src/fonts/*"];
+    tsconfigContent.compilerOptions.paths['root/*'] = ["/*"];
+    tsconfigContent.compilerOptions.paths['components/*'] = ["/src/components*"];
 
-    tsconfigContent.include.push['app/**/*.ts'];
-    tsconfigContent.include.push['app/**/*.tsx'];
-    tsconfigContent.include.push['app/**/*.vue'];
+    tsconfigContent.include = tsconfigContent.include.concat(['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.vue']);
+    tsconfigContent.exclude = tsconfigContent.exclude.concat(['platforms', 'hooks'])
 
-    tsconfigContent.exclude.push['platforms'];
-    tsconfigContent.exclude.push['hooks'];
-
-    fs.writeFileSync(tsconfigPath, JSON.stringify(tsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
+    fs.writeFileSync(existingDirPath + 'tsconfig.json', JSON.stringify(tsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
       if (err) console.error(err)
     });
 
@@ -463,7 +469,7 @@ const tsconfigSetup = module.exports.tsconfigSetup = async (tsconfigPath) => {
 }
 
 // setup tslintSetup
-const tslintSetup = module.exports.tslintSetup = async (tslintPath) => {
+const tslintSetup = module.exports.tslintSetup = async (existingDirPath, tslintPath) => {
   let tslintContent = '';
 
   try {
@@ -473,14 +479,10 @@ const tslintSetup = module.exports.tslintSetup = async (tslintPath) => {
       return;
     }
 
-    tslintContent.linterOptions.exclude.push['platforms/**'];
-    tslintContent.linterOptions.exclude.push['hooks/**'];
+    tslintContent.linterOptions.exclude = tslintContent.linterOptions.exclude.concat(['platforms/**', 'hooks/**'])
+    tslintContent.exclude = tslintContent.exclude.concat(['platforms', 'hooks'])
 
-    tslintContent.exclude.push['platforms'];
-    tslintContent.exclude.push['hooks'];
-
-
-    fs.writeFileSync(tslintPath, JSON.stringify(tslintContent, null, 2), {encoding: 'utf8'}, (err) => {
+    fs.writeFileSync(existingDirPath + 'tslint.json', JSON.stringify(tslintContent, null, 2), {encoding: 'utf8'}, (err) => {
       if (err) console.error(err)
     });
 
@@ -514,13 +516,19 @@ const extractCallDir = module.exports.extractCallDir = () => {
 
 }
 
-const renderFilesIndividually = module.exports.renderFilesIndividually = async (api, files, commonRenderOptions, srcPathPrepend, destPathPrepend) => {
+const renderFilesIndividually = module.exports.renderFilesIndividually = async (api, jsOrTs, files, commonRenderOptions, srcPathPrepend, destPathPrepend) => {
   try {
     const obj = {}
-    for(let file of files)
-      obj[destPathPrepend + file] = srcPathPrepend + file;
+    for(let file of files) {
+      let newFile = file;
+      if(file.slice(-3) === '.js' || file.slice(-3) === '.ts')
+        newFile = file.substring(0, file.length - 3) + jsOrTs;
+
+      obj[destPathPrepend + newFile] = srcPathPrepend + file;
+    }
 
     api.render(obj, commonRenderOptions);
+    
   } catch(err) {
     throw err
   }

@@ -32,7 +32,7 @@
 <%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
   //aliased to src/components
-  import HelloWorld from '~/components/HelloWorld'
+  import HelloWorld from '~/components/HelloWorld.android.vue'
 
   export default {
     name: 'home',

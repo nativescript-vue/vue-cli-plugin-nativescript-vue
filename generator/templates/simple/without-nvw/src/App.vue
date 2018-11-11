@@ -39,10 +39,10 @@
       }
     },  
   }
-</script>
+</script>AboutNativeVue
 <%_ } else if (!rootOptions.router && usingTS){ _%>
 <script lang="ts">
-  import HelloWorld from 'components/HelloWorld'
+  import HelloWorld from 'components/HelloWorld.vue'
 
   export default {
     name: 'home',

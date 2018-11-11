@@ -24,7 +24,6 @@
 
 <%_ if (!rootOptions.router && !usingTS) { _%>
 <script>
-  // ~ is an alias to /src
   import Home from '~/views/Home';
   import About from '~/views/About';
 
@@ -48,9 +47,8 @@
 </script>
 <%_ } else if (!rootOptions.router && usingTS) { _%>
 <script lang="ts">
-  // ~ is an alias to /src
-  import Home from '~/views/Home';
-  import About from '~/views/About';
+  import Home from '~/views/Home.native.vue';
+  import About from '~/views/About.native.vue';
 
   export default {
 
@@ -72,8 +70,6 @@
 </script>
 <%_ } else if (rootOptions.router && !usingTS){ _%>
 <script>
-
-  // ~ is an alias to /src
   import Home from '~/views/Home';
   import About from '~/views/About';
 
@@ -97,10 +93,8 @@
 </script>
 <%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
-
-  // ~ is an alias to /src
-  import Home from '~/views/Home';
-  import About from '~/views/About';
+  import Home from '~/views/Home.native.vue';
+  import About from '~/views/About.native.vue';
 
   export default {
 
