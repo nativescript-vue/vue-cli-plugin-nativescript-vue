@@ -29,20 +29,20 @@
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.native.vue',
-      }
-    },    
+        navbarTitle: 'App.native.vue'
+      };
+    },
     methods: {
-      goToHomePage() {
+      goToHomePage () {
         this.$navigateTo(Home);
       },
-      goToAboutPage() {
+      goToAboutPage () {
         this.$navigateTo(About);
       }
     }
-  }
+  };
 
 </script>
 <%_ } else if (!rootOptions.router && usingTS) { _%>
@@ -52,66 +52,68 @@
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.native.vue',
-      }
-    },    
+        navbarTitle: 'App.native.vue'
+      };
+    },
     methods: {
-      goToHomePage() {
-        this.$navigateTo(Home);
+      goToHomePage () {
+        (this as any).$navigateTo(Home);
       },
-      goToAboutPage() {
-        this.$navigateTo(About);
+      goToAboutPage () {
+        (this as any).$navigateTo(About);
       }
     }
-  }
+  };
 
 </script>
 <%_ } else if (rootOptions.router && !usingTS){ _%>
 <script>
+
   import Home from '~/views/Home';
   import About from '~/views/About';
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.native.vue',
-      }
-    },    
+        navbarTitle: 'App.native.vue'
+      };
+    },
     methods: {
-      goToHomePage() {
+      goToHomePage () {
         this.$navigateTo(Home);
       },
-      goToAboutPage() {
+      goToAboutPage () {
         this.$navigateTo(About);
       }
     }
-  }
+  };
 
 </script>
 <%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
+
   import Home from '~/views/Home.native.vue';
   import About from '~/views/About.native.vue';
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.native.vue',
-      }
-    },    
+        navbarTitle: 'App.native.vue'
+      };
+    },
     methods: {
-      goToHomePage() {
-        this.$navigateTo(Home);
+      goToHomePage () {
+        (this as any).$navigateTo(Home);
       },
-      goToAboutPage() {
-        this.$navigateTo(About);
+      goToAboutPage () {
+        (this as any).$navigateTo(About);
       }
     }
-  }
+  };
 
 </script>
 <%_ } else { _%>

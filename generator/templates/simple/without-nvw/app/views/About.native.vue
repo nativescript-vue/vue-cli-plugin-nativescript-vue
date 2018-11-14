@@ -1,4 +1,4 @@
-<%_ if (rootOptions.router && !usingTS) { _%>
+<%_ if (rootOptions.router) { _%>
 <template>
     <Page>
         <ActionBar :title="navbarTitle"/>
@@ -13,23 +13,25 @@
 <script>
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'About.native.vue',
-      }
-    },    
-  }
+        navbarTitle: 'About.native.vue'
+      };
+    }  
+  };
+
 </script>
-<%_ } else if (rootOptions.router && usingTS) { _%>
+<%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'About.native.vue',
-      }
-    },
-  }
+        navbarTitle: 'About.native.vue'
+      };
+    }
+  };
+
 </script>
 <%_ } else { _%>
 <%_ } _%>

@@ -1,4 +1,4 @@
-<%_ if (rootOptions.router && !usingTS) { _%>
+<%_ if (rootOptions.router) { _%>
 <template>
   <div class="w-page">
     <div class="w-container">
@@ -17,28 +17,30 @@
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
         msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
-      }
-    },  
-  }
+      };
+    }
+  };
+
 </script>
 <%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
-  import HelloWorld from 'components/HelloWorld.vue'
+  import HelloWorld from 'components/HelloWorld.vue';
 
   export default {
     name: 'home',
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
         msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
-      }
-    },  
-  }
+      };
+    }
+  };
+
 </script>
 <%_ } else { _%>
 <%_ } _%>

@@ -26,35 +26,36 @@
 
 <%_ if (!rootOptions.router && !usingTS) { _%>
 <script>
-  import HelloWorld from 'components/HelloWorld'
+  import HelloWorld from 'components/HelloWorld';
 
   export default {
     name: 'home',
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
-      }
-    },  
-  }
+        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+      };
+    }
+  };
+
 </script>AboutNativeVue
 <%_ } else if (!rootOptions.router && usingTS){ _%>
 <script lang="ts">
-  import HelloWorld from 'components/HelloWorld.vue'
+  import HelloWorld from 'components/HelloWorld.vue';
 
   export default {
     name: 'home',
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
-      }
-    },  
-  }
+        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+      };
+    }
+  };
 
 </script>
 <%_ } else if (rootOptions.router && !usingTS){ _%>
@@ -62,12 +63,12 @@
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.vue not typescript',
-      }
-    },
-  }
+        navbarTitle: 'App.vue not typescript'
+      };
+    }
+  };
 
 </script>
 <%_ } else if (rootOptions.router && usingTS){ _%>
@@ -75,12 +76,12 @@
 
   export default {
 
-    data() {
+    data () {
       return {
-        navbarTitle: 'App.vue with TS',
-      }
-    },
-  }
+        navbarTitle: 'App.vue with TS'
+      };
+    }
+  };
 
 </script>
 <%_ } else { _%>

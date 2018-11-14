@@ -14,38 +14,40 @@
 <%_ if (rootOptions.router && !usingTS) { _%>
 <script>
   //aliased to src/components
-  import HelloWorld from '~/components/HelloWorld'
+  import HelloWorld from '~/components/HelloWorld.native.vue';
 
   export default {
     name: 'home',
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
         navbarTitle: 'Home.native.vue',
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      }
-    },  
-  }
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
+      };
+    }
+  };
+
 </script>
 <%_ } else if (rootOptions.router && usingTS){ _%>
 <script lang="ts">
-  //aliased to src/components
-  import HelloWorld from '~/components/HelloWorld.native.vue'
+
+  import HelloWorld from '~/components/HelloWorld.native.vue';
 
   export default {
     name: 'home',
     components: {
       HelloWorld
     },
-    data() {
+    data () {
       return {
         navbarTitle: 'Home.native.vue',
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      }
-    },  
-  }
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
+      };
+    }
+  };
+
 </script>
 <%_ } else { _%>
 <%_ } _%>

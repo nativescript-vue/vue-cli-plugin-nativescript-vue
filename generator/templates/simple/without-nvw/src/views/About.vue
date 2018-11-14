@@ -7,3 +7,13 @@
     </div>
 </template>
 <%_ } _%>
+<%_ if (rootOptions.router && !usingTS) { _%>
+<script>
+
+</script>
+<%_ } else if (rootOptions.router && usingTS){ _%>
+<script lang="ts">
+
+</script>
+<%_ } else { _%>
+<%_ } _%>

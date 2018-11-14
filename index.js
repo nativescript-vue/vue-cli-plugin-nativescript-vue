@@ -6,6 +6,7 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const DefinePlugin = require('webpack/lib/DefinePlugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const nativescriptTarget = require("nativescript-dev-webpack/nativescript-target");
 const NsVueTemplateCompiler = require("nativescript-vue-template-compiler");
@@ -23,6 +24,7 @@ const resolveExtensionsOptions = {
 
 module.exports = (api, projectOptions) => {
 
+  const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js'
   const env = process.env.NODE_ENV;
   const platform = process.env.VUE_APP_PLATFORM //&& (process.env.VUE_PLATFORM && "android" || process.env.VUE_PLATFORM && "ios" || process.env.VUE_PLATFORM && "web");
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
@@ -30,7 +32,8 @@ module.exports = (api, projectOptions) => {
   
   projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'platforms/web' : nsWebpack.getAppPath(platform, api.service.context));
 
-  return appMode === 'web' ? webConfig(api, projectOptions, env, appMode) : nativeConfig(api, projectOptions, env, platform);
+
+  return appMode === 'web' ? webConfig(api, projectOptions, env, appMode, jsOrTs) : nativeConfig(api, projectOptions, env, platform, jsOrTs);
 
 
 
@@ -44,7 +47,8 @@ const resolveExtensions = (config, ext) => {
       .end()
 }  
 
-const nativeConfig = (api, projectOptions, env, platform) => {
+const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
+  console.log('starting nativeConfig')
   process.env.VUE_CLI_TARGET = 'nativescript'
 
   const appComponents = [
@@ -76,7 +80,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
   const appResourcesFullPath = appResourcesPath;
 
   const entryModule = nsWebpack.getEntryModule(appFullPath);
-  const entryPath = `.${path.sep}${entryModule}.js`;
+  const entryPath = `.${path.sep}${entryModule}${jsOrTs}`;
 
   api.chainWebpack(config => {
 
@@ -265,6 +269,19 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           .loader('babel-loader')
           .end()
 
+    
+    if (api.hasPlugin('typescript')) {
+      config.module
+        .rule('ts')
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(Object.assign({
+              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
+            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .end()
+
+    }
+
     // delete the css loader rule and rebuid it
     config.module.rules.delete('css')
     config.module
@@ -404,6 +421,44 @@ const nativeConfig = (api, projectOptions, env, platform) => {
       .use(WatchStateLoggerPlugin, [])
       .end();
 
+    if (api.hasPlugin('typescript')) {
+      config.module
+        .rule('ts')
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(Object.assign({
+              configFile: path.resolve(api.resolve('app'), 'tsconfig.json'),
+            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .end()
+
+      config.module
+        .rule('tsx')
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(Object.assign({
+              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
+            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .end()
+
+      // Next section is weird as we have to copy the plugin's config, edit the copy
+      // delete the plugin and then add the plugin back in with the saved config.
+      // This is all because webpack chain cannot access the 'tslint' option of the plugin
+      // directly to edit it.
+      const forTSPluginOptions = config.plugin('fork-ts-checker').get('args')[0];
+
+      forTSPluginOptions.tsconfig = path.resolve(api.resolve('app'), 'tsconfig.json');
+      forTSPluginOptions.tslint = path.resolve(projectRoot, 'tslint.json');
+
+      config.plugins.delete('fork-ts-checker')
+      .end();
+
+      config.plugin('fork-ts-checker')
+        .use(ForkTsCheckerWebpackPlugin, [forTSPluginOptions])
+        .end();
+
+
+    }
+
     // // // // causes error on compile at the moment
     // // // config.plugin('extract-css').tap(args => {
     // // //   if (!args.length) return args;
@@ -434,14 +489,14 @@ const nativeConfig = (api, projectOptions, env, platform) => {
 
 }
 
-const webConfig = (api, projectOptions, env, appMode) => {
+const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
 
   const projectRoot = api.service.context;
 
   api.chainWebpack(config => {
 
     config.entry('app').clear()
-    config.entry('app').add(path.resolve(api.resolve('src'), 'main.js'));
+    config.entry('app').add(path.resolve(api.resolve('src'), 'main' + jsOrTs));
 
     config
       .output
@@ -451,9 +506,10 @@ const webConfig = (api, projectOptions, env, appMode) => {
     //config.resolve.alias.set('~', api.resolve('src'))
 
     config.resolve.alias
-      .delete('@')
-      .set('@', api.resolve('src'))
+      //.delete('@')
+      //.set('@', api.resolve('src'))
       .set('~', api.resolve('src'))
+      .set('src', api.resolve('src'))
       .set('assets', path.resolve(api.resolve('src'), 'assets'))
       .set('components', path.resolve(api.resolve('src'), 'components'))
       .set('fonts', path.resolve(api.resolve('src'), 'fonts'))
@@ -482,11 +538,13 @@ const webConfig = (api, projectOptions, env, appMode) => {
                 }, config.module.rule('vue').uses.get('vue-loader').get('options')))
                 .end()
 
+    
+
     // Define useful constants like TNS_WEBPACK
     config.plugin('define')
       .use(DefinePlugin, [{
         'process.env': {
-          "TNS_ENV": JSON.stringify(env),
+          'TNS_ENV': JSON.stringify(env),
           'TNS_APP_PLATFORM': JSON.stringify(process.env.VUE_APP_PLATFORM),
           'TNS_APP_MODE': JSON.stringify(process.env.VUE_APP_MODE)
         }
@@ -498,59 +556,46 @@ const webConfig = (api, projectOptions, env, appMode) => {
       .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {root: projectOptions.outputDir}] )
       .end();
 
+
+
+
+
+    if (api.hasPlugin('typescript')) {
+      config.module
+        .rule('ts')
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(Object.assign({
+              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
+            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .end()
+
+      config.module
+        .rule('tsx')
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(Object.assign({
+              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
+            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .end()
+
+      // Next section is weird as we have to copy the plugin's config, edit the copy
+      // delete the plugin and then add the plugin back in with the saved config.
+      // This is all because webpack chain cannot access the 'tslint' option of the plugin
+      // directly to edit it.
+      const forTSPluginOptions = config.plugin('fork-ts-checker').get('args')[0];
+
+      forTSPluginOptions.tsconfig = path.resolve(api.resolve('app'), 'tsconfig.json');
+      forTSPluginOptions.tslint = path.resolve(projectRoot, 'tslint.json');
+
+      config.plugins.delete('fork-ts-checker')
+      .end();
+
+      config.plugin('fork-ts-checker')
+        .use(ForkTsCheckerWebpackPlugin, [forTSPluginOptions])
+        .end();
+
+    }
+
   })
 }
-
-
-
-// setupCommands = (api) => {
-//   api.registerCommand('tns:dev', {
-//     description: 'run nativescript cli commands',
-//     usage: 'vue-cli-service tns [options]',
-//     options: {
-//       '--android': 'run in android emulator',
-//       '--ios': 'run in ios simulator',
-//       '--release': 'run in release mode',
-//     }
-//   }, args => { 
-//     return require('./lib/commands/tns')(args, api)
-//   })
-
-//   api.registerCommand('tns:prod', {
-//     description: 'run nativescript cli commands',
-//     usage: 'vue-cli-service tns [options]',
-//     options: {
-//       '--android': 'run in android emulator',
-//       '--ios': 'run in ios simulator',
-//       '--release': 'run in release mode',
-//     }
-//   }, args => {
-//     return require('./lib/commands/tns')(args, api)
-//   })
-
-  // // NOT IMPLEMENTED AT ALL
-  // api.registerCommand('tns:snapshot', {
-  //   description: 'run nativescript cli commands',
-  //   usage: 'vue-cli-service tns [options]',
-  //   options: {
-  //     '--android': 'run in android emulator',
-  //     '--ios': 'run in ios simulator',
-  //     '--release': 'run in release mode',
-  //   }
-  // }, args => { 
-  //   return require('./lib/commands/tns')(args, api)
-  // })
-
-  // // NOT IMPLEMENTED AT ALL
-  // api.registerCommand('tns:report', {
-  //   description: 'run nativescript cli commands',
-  //   usage: 'vue-cli-service tns:report [options]',
-  //   options: {
-  //     '--android': 'run in android emulator',
-  //     '--ios': 'run in ios simulator',
-  //     '--release': 'run in release mode',
-  //   }
-  // }, args => { 
-  //   return require('./lib/commands/tns')(args, api)
-  // })
-//}

@@ -12,7 +12,8 @@
     props: {
       msg: String
     }
-  }
+  };
+
 </script>
 <%_ } else { _%>
 <script lang="ts">
@@ -21,7 +22,8 @@
     props: {
       msg: String
     }
-  }
+  };
+
 </script>
 <%_ } _%>
 

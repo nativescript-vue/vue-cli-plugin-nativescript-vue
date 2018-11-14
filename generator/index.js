@@ -4,7 +4,7 @@ const replace = require('replace-in-file');
 
 const newline = process.platform === 'win32' ? '\r\n' : '\n';
 
-module.exports = (api, options, rootOptions) => {
+module.exports = async (api, options, rootOptions) => {
 
   console.log('options.isNativeOnly - ', options.isNativeOnly)
   console.log('options.isNVW - ', options.isNVW)
@@ -13,11 +13,12 @@ module.exports = (api, options, rootOptions) => {
   console.log('usingBabel - ', api.hasPlugin('babel'))
 
   const existingDirPath = './ns-example/';
-  const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js'
+  const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
 
   const srcfiles = [
     'router.js',
     'main.js',
+    api.hasPlugin('typescript') ? 'tsconfig.json' : '',
     'App.vue',
     'views/About.vue',
     'views/Home.vue',
@@ -28,6 +29,7 @@ module.exports = (api, options, rootOptions) => {
   const appfiles = [
     'package.json',
     'main.js',
+    api.hasPlugin('typescript') ? 'tsconfig.json' : '',
     'App.native.vue',
     'App.ios.vue',
     'App.android.vue',
@@ -41,6 +43,7 @@ module.exports = (api, options, rootOptions) => {
     'components/HelloWorld.ios.vue',
     'components/HelloWorld.android.vue',
   ]
+
 
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
   if(options.isNativeOnly && options.isNVW) {
@@ -90,25 +93,29 @@ module.exports = (api, options, rootOptions) => {
       'tns-core-modules': '^4.2.1',
     },
     devDependencies: {
-      'clean-webpack-plugin': '^0.1.19',
-      'copy-webpack-plugin': '^4.6.0',
+      //'clean-webpack-plugin': '^0.1.19',
+      //'copy-webpack-plugin': '^4.6.0',
       'cross-env': '^5.2.0',
       'nativescript-dev-webpack': '^0.17.0',
       'nativescript-vue-template-compiler': '^2.0.2',
       'nativescript-worker-loader': '~0.9.1',
-      'replace-in-file': '^3.4.2',
-      'tns-platform-declarations': '^5.0.2',
+      //'replace-in-file': '^3.4.2',
+      //'vue-property-decorator': '^7.2.0',
+      //'vue-template-compiler': '^2.5.17',
+      //'vue-class-component': '^6.3.2',
     }
   })
 
-  if(api.hasPlugin('typescript')) {
-    // api.extendPackage({
-    //   dependencies: {
-    //   },
-    //   devDependencies: {
-    //   }
-    // })
-  }
+  // if(api.hasPlugin('typescript')) {
+  //   api.extendPackage({
+  //     dependencies: {
+  //     },
+  //     devDependencies: {
+  //       //'fork-ts-checker-webpack-plugin': '^0.4.15'//,
+  //       //'tns-platform-declarations': '^4.2.1'
+  //     }
+  //   })
+  // }
 
   // if the project is using babel, then load appropriate packages
   if(api.hasPlugin('babel')) {
@@ -151,14 +158,34 @@ module.exports = (api, options, rootOptions) => {
   // and if it is an existing project, use the existing template
   if(options.isNewProject) {
 
+    // render App_Resources to the ./app folder
+    api.render(async () => {
+      await renderDirectory(api, '.js', commonRenderOptions, './templates/App_Resources', './app/App_Resources');
+
+      // create the babel.config.js file
+      if(api.hasPlugin('babel')) {
+        fs.ensureFileSync('./babel.config.js')
+        await applyBabelConfig(api, './babel.config.js');
+      }
+    })
+
     // New Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
 
-      renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', './src/');
-      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
+      api.render(async () => {
+        // render ./src directory
+        await renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src', './src');
 
-      vueRouterSetup(api, './', jsOrTs);
-      vuexSetup(api, './', jsOrTs);
+        // render ./app directory
+        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', './app');
+
+        // add router statements to src/main.*s
+        await vueRouterSetup(api, '', jsOrTs);
+
+        // add vuex statements to src/main.*s
+        await vuexSetup(api, options, '', jsOrTs);
+      })     
+      
     } 
 
     // New Project and is using Nativescript-Vue-Web
@@ -168,32 +195,50 @@ module.exports = (api, options, rootOptions) => {
 
     // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', './app/');
-    }
+      // render app directory
+      api.render(async () => {
+        // render ./app directory
+        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', './app');
+
+        // add vuex statements to app/main.*s
+        await vuexSetup(api, options, '', jsOrTs);
+      })
+    } 
 
     if(options.isNativeOnly && options.isNVW) {
       // should never reach this block of code
     }
   
-    // create the babel.config.js file
-    if(api.hasPlugin('babel')) {
-      fs.ensureFileSync('./babel.config.js')
-      applyBabelConfig(api, './babel.config.js');
-    }
-
-    // copy App_Resources to the ./app folder
-    copyDirs('./templates/App_Resources', './app/App_Resources')
-
-
   } else { // Exising Project
 
+    // render App_Resources to the ./ns-example/app folder
+    api.render(async () => {
+      await renderDirectory(api, '.js', commonRenderOptions, './templates/App_Resources', existingDirPath + 'app/App_Resources');
+
+      if(api.hasPlugin('babel')) {
+        fs.ensureFileSync(existingDirPath + 'babel.config.js')
+        applyBabelConfig(api, existingDirPath + 'babel.config.js');
+      }
+    })
+    
     // Existing Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
-      renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src/', existingDirPath + 'src/');
-      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
 
-      vueRouterSetup(api, existingDirPath, jsOrTs);
-      vuexSetup(api, existingDirPath, jsOrTs);
+      api.render(async () => {
+        // render ./ns-example/src directory
+        await renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src', existingDirPath + 'src');
+
+        // render ./ns-example/app directory
+        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', existingDirPath + 'app');
+
+        // add router statements to ./ns-example/src/main.*s
+        await vueRouterSetup(api, existingDirPath, jsOrTs);
+
+        // add vuex statements to ./ns-example/app/main.*s
+        await vuexSetup(api, options, existingDirPath, jsOrTs);
+
+      })
+     
     } 
 
     // Existing Project and is using Nativescript-Vue-Web
@@ -203,20 +248,20 @@ module.exports = (api, options, rootOptions) => {
 
     // Existing Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
-      renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app/', existingDirPath + 'app/');
+
+      api.render(async () => {
+        // render ./ns-example/app directory
+        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', existingDirPath + 'app');
+
+        // add vuex statements to ./ns-example/app/main.*s
+        await vuexSetup(api, options, existingDirPath, jsOrTs);
+      })
+      
     }
 
     if(options.isNVW && options.isNativeOnly) {
       // should never reach this block of code
     }
-
-    if(api.hasPlugin('babel')) {
-      fs.ensureFileSync(existingDirPath + 'babel.config.js')
-      applyBabelConfig(api, existingDirPath + 'babel.config.js');
-    }
-
-    // copy App_Resources to the ./app folder
-    copyDirs('./templates/App_Resources', existingDirPath + 'app/App_Resources')
 
   }
 
@@ -226,12 +271,19 @@ module.exports = (api, options, rootOptions) => {
     gitignoreAdditions(api);
 
     if(options.isNewProject) {
-      writeEnvFiles('./')
+      writeRootFiles('./')
       nsconfigSetup('./', api.resolve('nsconfig.json'));
 
       if(api.hasPlugin('typescript')) {
-        tsconfigSetup(api, './', api.resolve('tsconfig.json'));
         tslintSetup('./', api.resolve('tslint.json'));
+
+        fs.move('./src/shims-tsx.d.ts', './shims-tsx.d.ts', err => {
+          if (err) throw err;
+        });
+        
+        fs.move('./src/shims-vue.d.ts', './shims-vue.d.ts', err => {
+          if (err) throw err;
+        });
       }
 
       // for new projects that are native only, move files/dirs and delete others
@@ -264,12 +316,20 @@ module.exports = (api, options, rootOptions) => {
       }
 
     } else {
-      writeEnvFiles(existingDirPath)
+      writeRootFiles(existingDirPath)
       nsconfigSetup(existingDirPath, api.resolve('nsconfig.json'));
 
       if(api.hasPlugin('typescript')) {
-        tsconfigSetup(api, existingDirPath, api.resolve('tsconfig.json'));
         tslintSetup(existingDirPath, api.resolve('tslint.json'));
+
+        fs.copy('./src/shims-tsx.d.ts', path.join(existingDirPath, 'shims-tsx.d.ts'), err => {
+          if (err) throw err;
+        });
+        
+        fs.copy('./src/shims-vue.d.ts', path.join(existingDirPath, 'shims-vue.d.ts'), err => {
+          if (err) throw err;
+        });
+
       }
 
 
@@ -299,27 +359,37 @@ module.exports = (api, options, rootOptions) => {
 
 // setup vue-router options
 // will not setup any vue-router options for native app
-const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrepend, jsOrTs) => {
+const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrefix, jsOrTs) => {
   try {
-    if(api.hasPlugin('vue-router')){
-      api.injectImports(filePathPrepend + 'src/main' + jsOrTs, `import router from '~/router'`)
-      api.injectRootOptions(filePathPrepend + 'src/main' + jsOrTs, `router`)
+
+    if (api.hasPlugin('vue-router')) {
+      api.injectImports(filePathPrefix + 'src/main' + jsOrTs, `import router from 'src/router';`)
+      api.injectRootOptions(filePathPrefix + 'src/main' + jsOrTs, `router`)
     }
+
   } catch(err) {
     throw err
   }
 
 }
 
-// setup Vuex
-const vuexSetup = module.exports.vuexSetup = async (api, filePathPrepend, jsOrTs) => {
+// setup Vuex options
+// if it's native only, it will not do anything in /src directory
+const vuexSetup = module.exports.vuexSetup = async (api, options, filePathPrefix, jsOrTs) => {
+  console.log('configing vuex');
   try {
-    if(api.hasPlugin('vuex')){
-      api.injectImports(filePathPrepend + 'src/main' + jsOrTs, `import store from '~/store'`)
-      api.injectRootOptions(filePathPrepend + 'src/main' + jsOrTs, `store`)
-      api.injectImports(filePathPrepend + 'app/main' + jsOrTs, `import store from 'src/store'`)
-      api.injectRootOptions(filePathPrepend + 'app/main' + jsOrTs, `store`)
+
+    if (api.hasPlugin('vuex')) {
+
+      if (!options.isNativeOnly) {
+        api.injectImports(filePathPrefix + 'src/main' + jsOrTs, `import store from 'src/store';`)
+        api.injectRootOptions(filePathPrefix + 'src/main' + jsOrTs, `store`)
+      }
+      
+      api.injectImports(filePathPrefix + 'app/main' + jsOrTs, `import store from 'src/store';`)
+      api.injectRootOptions(filePathPrefix + 'app/main' + jsOrTs, `store`)
     }
+
   } catch(err) {
     throw err
   }
@@ -358,23 +428,27 @@ const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath)
   }
 }
 
-// write out environmental files
-const writeEnvFiles = module.exports.writeEnvFiles = async (filePathPrepend) => {
+// write out files in the root of the project
+const writeRootFiles = module.exports.writeRootFiles = async (filePathPrefix) => {
 
   try {
-    const developmentAndroid = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
-    const developmentIOS = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
-    const developmentWeb = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
-    const productionAndroid = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
-    const productionIOS = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
-    const productionWeb = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
+    const envDevelopmentAndroid = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
+    const envDevelopmentIOS = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
+    const envDevelopmentWeb = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
+    const envProductionAndroid = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
+    const envProductionIOS = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
+    const envProductionWeb = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
+    const globalTypes = 'declare const TNS_ENV: string;' + newline + 'declare const TNS_APP_PLATFORM: string;' + newline + 'declare const TNS_APP_MODE: string;';
 
-    fs.writeFileSync(filePathPrepend + '.env.development.android', developmentAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrepend + '.env.development.ios', developmentIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrepend + '.env.development.web', developmentWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrepend + '.env.production.android', productionAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrepend + '.env.production.ios', productionIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrepend + '.env.production.web', productionWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+     
+    fs.writeFileSync(filePathPrefix + '.env.development.android', envDevelopmentAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + '.env.development.ios', envDevelopmentIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + '.env.development.web', envDevelopmentWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + '.env.production.android', envProductionAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + '.env.production.ios', envProductionIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + '.env.production.web', envProductionWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    fs.writeFileSync(filePathPrefix + 'globals.d.ts', globalTypes, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+
 
   } catch(err) {
     throw err
@@ -434,40 +508,6 @@ const nsconfigSetup = module.exports.nsconfigSetup = async (existingDirPath, nsc
 
 }
 
-// setup tsconfigSetup
-const tsconfigSetup = module.exports.tsconfigSetup = async (api, existingDirPath, tsconfigPath) => {
-  let tsconfigContent = {};
-
-  try {
-
-    if (fs.existsSync(tsconfigPath)) {
-      tsconfigContent = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'));
-    } else {
-      tsconfigContent = {};
-    }
-
-    delete tsconfigContent.compilerOptions.paths['@/*'];
-    tsconfigContent.compilerOptions.paths['~/*'] = ["src/*"];
-    tsconfigContent.compilerOptions.paths['src/*'] = ["src/*"];
-    tsconfigContent.compilerOptions.paths['assets/*'] = ["src/assets/*"];
-    tsconfigContent.compilerOptions.paths['fonts/*'] = ["src/fonts/*"];
-    tsconfigContent.compilerOptions.paths['root/*'] = ["/*"];
-    tsconfigContent.compilerOptions.paths['components/*'] = ["/src/components*"];
-
-    tsconfigContent.include = tsconfigContent.include.concat(['app/**/*.ts', 'app/**/*.tsx', 'app/**/*.vue']);
-    tsconfigContent.exclude = tsconfigContent.exclude.concat(['platforms', 'hooks'])
-
-    fs.writeFileSync(existingDirPath + 'tsconfig.json', JSON.stringify(tsconfigContent, null, 2), {encoding: 'utf8'}, (err) => {
-      if (err) console.error(err)
-    });
-
-    
-  } catch(err) {
-    throw err
-  }
-
-}
-
 // setup tslintSetup
 const tslintSetup = module.exports.tslintSetup = async (existingDirPath, tslintPath) => {
   let tslintContent = '';
@@ -493,17 +533,6 @@ const tslintSetup = module.exports.tslintSetup = async (existingDirPath, tslintP
 
 }
 
-const copyDirs = module.exports.copyDirs = async (srcPath, destPath) => {  
-  try {
-    const baseDir = extractCallDir()
-    const source = path.resolve(baseDir, srcPath)
-    await fs.copy(source, destPath)
-  } catch(err) {
-    throw err
-  }
-
-}
-
 // extract callsite file location using error stack
 const extractCallDir = module.exports.extractCallDir = () => {
   try {
@@ -516,18 +545,64 @@ const extractCallDir = module.exports.extractCallDir = () => {
 
 }
 
-const renderFilesIndividually = module.exports.renderFilesIndividually = async (api, jsOrTs, files, commonRenderOptions, srcPathPrepend, destPathPrepend) => {
+// Use the generator's render function to render individual files passed in from an array.
+// Will iterate through the array and then construct and object that is passed to render()
+const renderFilesIndividually = module.exports.renderFilesIndividually = async (api, jsOrTs, files, opts, srcPathPrefix, destPathPrefix) => {
+
   try {
-    const obj = {}
+    const obj = {};
+
     for(let file of files) {
       let newFile = file;
+
+      // replace .js files with .ts files when jsOrTs = '.ts'
       if(file.slice(-3) === '.js' || file.slice(-3) === '.ts')
         newFile = file.substring(0, file.length - 3) + jsOrTs;
 
-      obj[destPathPrepend + newFile] = srcPathPrepend + file;
+      obj[path.join(destPathPrefix, newFile)] = path.join(srcPathPrefix, file);
     }
 
-    api.render(obj, commonRenderOptions);
+    api.render(obj, opts);
+    
+  } catch(err) {
+    throw err
+  }
+
+}
+
+// Good chunk of the following code comes from vue-cli/packages/@vue/cli/lib/GeneratorAPI.js
+// Specifically the render function.  We want to render the entire directory, but passing just
+// the directory to render doesn't give us the ability to tell where to put it as the cli's render
+// function lacks a simple directory in and directory out option.  So, we have to get the contents 
+// of the passed in directory and then render each file individually to where we want it via
+// the render function's isObject(source) option that we use in our renderFilesIndividually function.
+const renderDirectory = module.exports.renderDirectory = async (api, jsOrTs, opts, srcPathPrefix, destPathPrefix) => {
+
+  try {
+    
+    const baseDir =  await extractCallDir();
+    const source = path.resolve(baseDir, srcPathPrefix);
+    const files = new Array();
+
+
+    const globby = require('globby');
+    const _files = await globby(['**/*'], { cwd: source });
+
+    for (const rawPath of _files) {
+      let filename = path.basename(rawPath)
+      // dotfiles are ignored when published to npm, therefore in templates
+      // we need to use underscore instead (e.g. "_gitignore")
+      if (filename.charAt(0) === '_' && filename.charAt(1) !== '_') {
+        filename = `.${filename.slice(1)}`
+      }
+      if (filename.charAt(0) === '_' && filename.charAt(1) === '_') {
+        filename = `${filename.slice(1)}`
+      }
+
+      files.push(rawPath);
+      renderFilesIndividually(api, jsOrTs, files, opts, srcPathPrefix, destPathPrefix)
+
+    }
     
   } catch(err) {
     throw err
