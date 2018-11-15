@@ -422,22 +422,27 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .end();
 
     if (api.hasPlugin('typescript')) {
+
+      const tsConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
+
       config.module
         .rule('ts')
+          .test(/\.ts$/)
           .use('ts-loader')
             .loader('ts-loader')
-            .options(Object.assign({
-              configFile: path.resolve(api.resolve('app'), 'tsconfig.json'),
-            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .options(tsConfigOptions)
             .end()
+
+      const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsxConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
 
       config.module
         .rule('tsx')
+          .test(/\.tsx$/)
           .use('ts-loader')
             .loader('ts-loader')
-            .options(Object.assign({
-              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
-            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .options(tsxConfigOptions)
             .end()
 
       // Next section is weird as we have to copy the plugin's config, edit the copy
