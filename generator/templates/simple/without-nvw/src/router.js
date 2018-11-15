@@ -5,7 +5,7 @@ replace:
   - !!js/regexp /import Router from 'vue-router'/
   - !!js/regexp /Vue.use\(Router\)/   
   - !!js/regexp /import Home from './views/Home.vue'/
-  - !!js/regexp /'./views/About.vue'/
+  - !!js/regexp /'./views/About.vue'\)/
 ---
 
 <%# REPLACE %>
@@ -25,5 +25,5 @@ import Home from '~/views/Home.vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-'~/views/About.vue'
+'~/views/About.vue'),
 <%# END_REPLACE %>

@@ -1,6 +1,5 @@
 const path = require('path')
-const fs = require('fs');
-const replace = require('replace-in-file');
+const fs = require('fs-extra');
 
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -31,7 +30,6 @@ module.exports = (api, projectOptions) => {
   process.env.VUE_APP_MODE = appMode;
   
   projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'platforms/web' : nsWebpack.getAppPath(platform, api.service.context));
-
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, appMode, jsOrTs) : nativeConfig(api, projectOptions, env, platform, jsOrTs);
 
@@ -75,6 +73,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     hmr, 
   } = env;  
 
+  const nativeOnly = fs.pathExistsSync(path.resolve(projectRoot, 'src'));
 
   const appFullPath = appPath
   const appResourcesFullPath = appResourcesPath;
@@ -123,7 +122,9 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
           .end();
 
 
-       
+  // next several use the resolveExtension function to easily
+  // and in resolve.extensions from an object array const 
+  // or directly from a string  
   config.resolve.extensions.clear();
   resolveExtensions(config, '.scss');
   resolveExtensions(config,'.css');
@@ -247,7 +248,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
             .end()
     })
     
-    // delete the vue loader rule and rebuid it
+    // delete the vue loader rule and rebuild it
     config.module.rules.delete('vue')
     config.module
       .rule('vue')
@@ -260,7 +261,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
           .before('string-replace-loader')
           .end()
 
-    // delete the js loader rule and rebuid it
+    // delete the js loader rule and rebuil it
     config.module.rules.delete('js')
     config.module
       .rule('js')
@@ -270,19 +271,33 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
           .end()
 
     
+    // only adjust ts-loaders when we're using typescript in the project
     if (api.hasPlugin('typescript')) {
+      const tsConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
+
       config.module
         .rule('ts')
+          .test(/\.ts$/)
           .use('ts-loader')
             .loader('ts-loader')
-            .options(Object.assign({
-              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
-            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .options(tsConfigOptions)
+            .end()
+
+      const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsxConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
+
+      config.module
+        .rule('tsx')
+          .test(/\.tsx$/)
+          .use('ts-loader')
+            .loader('ts-loader')
+            .options(tsxConfigOptions)
             .end()
 
     }
 
-    // delete the css loader rule and rebuid it
+    // delete the css loader rule and rebuild it
     config.module.rules.delete('css')
     config.module
       .rule('css')
@@ -304,7 +319,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
         .end()
 
 
-    // delete the scss rule and rebuid it
+    // delete the scss rule and rebuild it
     config.module.rules.delete('scss')
       config.module
         .rule('scss')
@@ -385,12 +400,16 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .end();
 
     // Copy assets to out dir. Add your own globs as needed.
+    // if the project is native-only then we want to copy files 
+    // from the app directory and not the src directory as at
+    // that point, the src directory should have been removed 
+    // when the plugin was originally invoked.
     config.plugin('copy-assets')
       .use(CopyWebpackPlugin, [[
-          { from: {glob: path.resolve(api.resolve('src'), 'fonts/**')}, to: path.join(projectOptions.outputDir, 'fonts/' ), flatten: true},
-          { from: {glob: path.resolve(api.resolve('src'), '**/*.jpg')}, to: path.join(projectOptions.outputDir, 'assets' ), flatten: true},
-          { from: {glob: path.resolve(api.resolve('src'), '**/*.png')}, to: path.join(projectOptions.outputDir, 'assets/' ), flatten: true},
-          { from: {glob: path.resolve(api.resolve('src'), 'assets/**/*')}, to: path.join(projectOptions.outputDir, 'assets/'), flatten: true},
+          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'fonts/**')}, to: path.join(projectOptions.outputDir, 'fonts/' ), flatten: true},
+          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.jpg')}, to: path.join(projectOptions.outputDir, 'assets' ), flatten: true},
+          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.png')}, to: path.join(projectOptions.outputDir, 'assets/' ), flatten: true},
+          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'assets/**/*')}, to: path.join(projectOptions.outputDir, 'assets/'), flatten: true},
         ],{ ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]}
       ])
       .end();
@@ -421,47 +440,24 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .use(WatchStateLoggerPlugin, [])
       .end();
 
+    // Another only do this if we're using typescript.  this code could have been put
+    // with the ts-loader section but left it here near the rest of the plugin config
     if (api.hasPlugin('typescript')) {
-
-      const tsConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
-      tsConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
-
-      config.module
-        .rule('ts')
-          .test(/\.ts$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsConfigOptions)
-            .end()
-
-      const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
-      tsxConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
-
-      config.module
-        .rule('tsx')
-          .test(/\.tsx$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsxConfigOptions)
-            .end()
-
       // Next section is weird as we have to copy the plugin's config, edit the copy
       // delete the plugin and then add the plugin back in with the saved config.
       // This is all because webpack chain cannot access the 'tslint' option of the plugin
       // directly to edit it.
-      const forTSPluginOptions = config.plugin('fork-ts-checker').get('args')[0];
+      const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-      forTSPluginOptions.tsconfig = path.resolve(api.resolve('app'), 'tsconfig.json');
-      forTSPluginOptions.tslint = path.resolve(projectRoot, 'tslint.json');
+      forTSPluginConfig.tsconfig = path.resolve(api.resolve('app'), 'tsconfig.json');
+      forTSPluginConfig.tslint = path.resolve(projectRoot, 'tslint.json');
 
       config.plugins.delete('fork-ts-checker')
       .end();
 
       config.plugin('fork-ts-checker')
-        .use(ForkTsCheckerWebpackPlugin, [forTSPluginOptions])
+        .use(ForkTsCheckerWebpackPlugin, [forTSPluginConfig])
         .end();
-
-
     }
 
     // // // // causes error on compile at the moment
@@ -508,11 +504,9 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
           .path(projectOptions.outputDir)
           .end();
 
-    //config.resolve.alias.set('~', api.resolve('src'))
-
     config.resolve.alias
-      //.delete('@')
-      //.set('@', api.resolve('src'))
+      .delete('@')
+      .set('@', api.resolve('src'))
       .set('~', api.resolve('src'))
       .set('src', api.resolve('src'))
       .set('assets', path.resolve(api.resolve('src'), 'assets'))
@@ -561,43 +555,44 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
       .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {root: projectOptions.outputDir}] )
       .end();
 
-
-
-
-
+    // only adjust ts-loaders when we're using typescript in the project
     if (api.hasPlugin('typescript')) {
+      const tsConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsConfigOptions.configFile = path.resolve(api.resolve('src'), 'tsconfig.json');
+
       config.module
         .rule('ts')
+          .test(/\.ts$/)
           .use('ts-loader')
             .loader('ts-loader')
-            .options(Object.assign({
-              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
-            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .options(tsConfigOptions)
             .end()
+
+      const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
+      tsxConfigOptions.configFile = path.resolve(api.resolve('src'), 'tsconfig.json');
 
       config.module
         .rule('tsx')
+          .test(/\.tsx$/)
           .use('ts-loader')
             .loader('ts-loader')
-            .options(Object.assign({
-              configFile: path.resolve(api.resolve('src'), 'tsconfig.json')
-            }, config.module.rule('ts').uses.get('ts-loader').get('options')))
+            .options(tsxConfigOptions)
             .end()
 
       // Next section is weird as we have to copy the plugin's config, edit the copy
       // delete the plugin and then add the plugin back in with the saved config.
       // This is all because webpack chain cannot access the 'tslint' option of the plugin
       // directly to edit it.
-      const forTSPluginOptions = config.plugin('fork-ts-checker').get('args')[0];
+      const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-      forTSPluginOptions.tsconfig = path.resolve(api.resolve('app'), 'tsconfig.json');
-      forTSPluginOptions.tslint = path.resolve(projectRoot, 'tslint.json');
+      forTSPluginConfig.tsconfig = path.resolve(api.resolve('src'), 'tsconfig.json');
+      forTSPluginConfig.tslint = path.resolve(projectRoot, 'tslint.json');
 
       config.plugins.delete('fork-ts-checker')
-      .end();
+        .end();
 
       config.plugin('fork-ts-checker')
-        .use(ForkTsCheckerWebpackPlugin, [forTSPluginOptions])
+        .use(ForkTsCheckerWebpackPlugin, [forTSPluginConfig])
         .end();
 
     }

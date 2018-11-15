@@ -13,11 +13,11 @@
 <script>
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'About.ios.vue'
+        navbarTitle: 'About.ios.vue',
       };
-    }  
+    },
   };
 
 </script>
@@ -25,11 +25,11 @@
 <script lang="ts">
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'About.ios.vue'
+        navbarTitle: 'About.ios.vue',
       };
-    }
+    },
   };
 
 </script>

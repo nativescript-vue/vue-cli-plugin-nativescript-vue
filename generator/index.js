@@ -9,12 +9,34 @@ module.exports = async (api, options, rootOptions) => {
   console.log('options.isNativeOnly - ', options.isNativeOnly)
   console.log('options.isNVW - ', options.isNVW)
   console.log('options.isNewProject - ', options.isNewProject)
+  console.log('options.templateType - ', options.templateType);
+
   console.log('usingTS - ', api.hasPlugin('typescript'))
   console.log('usingBabel - ', api.hasPlugin('babel'))
 
+
+  // if it is a new project changes will be written as they normally would with any plugin
+  // if it is an existing project, changes will be added to the ./ns-example directory
   const dirPathPrefix = options.isNewProject === true ? './' : './ns-example/';
+
+  // simple typescript detection and then variable is passed to multiple templating functions
+  // to simply change the file's extension
   const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
 
+  // These next two variables make it possible to match the template directory structure
+  // with the answers to their corrosponding prompts and have the plugin automatically
+  // know which paths to take to get the correct template.  If we add template Types in the
+  // future, hopefully no other work will need done to modify the plugin to accomdate 
+  // the pathing to the template directories.
+  //
+  // For example.  A template type of 'simple' and a non NativeScript-Vue-Web project will
+  // have a template path that equals: ./templates/simple/without-nvw
+  // If it's a template type of 'simple' but is a NativeScript-Vue-Web project then it will
+  // have a template path that equals: ./templates/simple/with-nvw
+  const templateNVWPathModifier = options.isNVW === true ? 'with-nvw' : 'without-nvw'
+  const templateTypePathModifer = options.templateType;
+  
+ 
   const srcfiles = [
     'router.js',
     'main.js',
@@ -46,13 +68,16 @@ module.exports = async (api, options, rootOptions) => {
 
 
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
-  if(options.isNativeOnly && options.isNVW) {
+  if(options.isNativeOnly === 'native' && options.isNVW) {
     throw Error('Invalid options chosen.  You cannot have a Native only project and use Nativescript-Vue-Web')
   }
 
-  if(options.isNativeOnly)
+  // if Native only, then we make absolutely sure you will not be able to 
+  // add NativeScript-Vue-Web into the project as it's not needed
+  if(options.isNativeOnly === 'native')
     options.isNVW = false;
   
+  // common render options to be passed to render functions
   const commonRenderOptions = {
     applicationName: api.generator.pkg.name,
     applicationVersion: api.generator.pkg.version,
@@ -81,10 +106,8 @@ module.exports = async (api, options, rootOptions) => {
     scripts: {
       "setup-webpack-config": "node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre",
       "remove-webpack-config": "node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post",
-      "serve:web": "vue-cli-service serve --mode development.web",
       "serve:android": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle",
       "serve:ios": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle",
-      "build:web": "vue-cli-service build --mode production.web",
       "build:android": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.android tns run android --bundle && npm run remove-webpack-config",
       "build:ios": "npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.ios tns run ios --bundle && npm run remove-webpack-config",
       },
@@ -93,29 +116,37 @@ module.exports = async (api, options, rootOptions) => {
       'tns-core-modules': '^4.2.1',
     },
     devDependencies: {
-      //'clean-webpack-plugin': '^0.1.19',
-      //'copy-webpack-plugin': '^4.6.0',
       'cross-env': '^5.2.0',
       'nativescript-dev-webpack': '^0.17.0',
       'nativescript-vue-template-compiler': '^2.0.2',
       'nativescript-worker-loader': '~0.9.1',
-      //'replace-in-file': '^3.4.2',
       //'vue-property-decorator': '^7.2.0',
       //'vue-template-compiler': '^2.5.17',
       //'vue-class-component': '^6.3.2',
     }
   })
 
+  // add scripts when we are also developing for the web
+  if(options.isNativeOnly === 'dual') {
+    api.extendPackage({
+      scripts: {
+        "serve:web": "vue-cli-service serve --mode development.web",
+        "build:web": "vue-cli-service build --mode production.web",
+        }
+    });
+
+  }
+
   if(api.hasPlugin('typescript')) {
     api.extendPackage({
       dependencies: {
       },
       devDependencies: {
-        //'fork-ts-checker-webpack-plugin': '^0.4.15',
         //'tns-platform-declarations': '^4.2.1'
       }
     });
 
+    // this means it's a typescript project and using babel
     if(api.hasPlugin('babel')) {
       api.extendPackage({
         dependencies: {
@@ -156,13 +187,14 @@ module.exports = async (api, options, rootOptions) => {
     delete pkg.scripts['serve'],
     delete pkg.scripts['build']
 
-    if(options.isNativeOnly) {
+    if(options.isNativeOnly === 'native') {
       // delete pkg.dependencies['vue']
-      // delete pkg.devDependencies['vue-template-compiler']
       delete pkg.browserslist
     }
 
   })
+
+  console.log('doing template rendering');
 
   api.render(async () => {
     // render App_Resources folder
@@ -173,143 +205,63 @@ module.exports = async (api, options, rootOptions) => {
   if(!options.isNVW) {
 
     // If not Native Only.
-    if(!options.isNativeOnly) {
+    if(options.isNativeOnly === 'dual') {
       api.render(async () => {
-        // render ./ns-example/src directory
-        await renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src', dirPathPrefix + 'src');
+        // render src directory
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'src'), dirPathPrefix + 'src');
 
-        // render ./ns-example/app directory
-        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
+        // render app directory
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'app'), dirPathPrefix + 'app');
 
-        // add router statements to ./ns-example/src/main.*s
+        // add router statements to src/main.*s
         await vueRouterSetup(api, dirPathPrefix, jsOrTs);
 
-        // add vuex statements to ./ns-example/app/main.*s
+        // add vuex statements to app/main.*s
         await vuexSetup(api, options, dirPathPrefix, jsOrTs);
 
       })
     } else { // Is Native Only
       api.render(async () => {
         // render app directory
-        await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
+        //await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'app'), dirPathPrefix + 'app');
 
         // add vuex statements to app/main.*s
         await vuexSetup(api, options, dirPathPrefix, jsOrTs);
 
-        // // await tsconfigSetup(dirPathPrefix, dirPathPrefix + 'app/tsconfig.json');
-
       })
     }
    
-  } 
+  } else {  // once we integrate NativeScript-Vue-Web, we'll put options here
 
-  console.log('doing template rendering');
-
-  // use the answer from the invoke prompt and if it's a new project use the new template
-  // and if it is an existing project, use the existing template
-  if(options.isNewProject) {
-
-    // // New Project and not using Nativescript-Vue-Web
-    // if(!options.isNVW && !options.isNativeOnly) {
-
-    //   api.render(async () => {
-    //     // render ./src directory
-    //     await renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src', dirPathPrefix + 'src');
-
-    //     // render ./app directory
-    //     await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
-
-    //     // add router statements to src/main.*s
-    //     await vueRouterSetup(api, dirPathPrefix, jsOrTs);
-
-    //     // add vuex statements to src/main.*s
-    //     await vuexSetup(api, options, dirPathPrefix, jsOrTs);
-    //   })     
-      
-    // } 
-
-    // New Project and is using Nativescript-Vue-Web
-    if(options.isNVW && !options.isNativeOnly) {
-      
-    } 
-
-    // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
-    if(!options.isNVW && options.isNativeOnly) {
-      // // render app directory
-      // api.render(async () => {
-      //   // render ./app directory
-      //   await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
-
-      //   // add vuex statements to app/main.*s
-      //   await vuexSetup(api, options, '', jsOrTs);
-      // })
-    } 
-
-    if(options.isNativeOnly && options.isNVW) {
-      // should never reach this block of code
-    }
-  
-  } else { // Exising Project
-
-    // // Existing Project and not using Nativescript-Vue-Web
-    // if(!options.isNVW && !options.isNativeOnly) {
-
-    //   api.render(async () => {
-    //     // render ./ns-example/src directory
-    //     await renderFilesIndividually(api, jsOrTs, srcfiles, commonRenderOptions, './templates/simple/without-nvw/src', dirPathPrefix + 'src');
-
-    //     // render ./ns-example/app directory
-    //     await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
-
-    //     // add router statements to ./ns-example/src/main.*s
-    //     await vueRouterSetup(api, dirPathPrefix, jsOrTs);
-
-    //     // add vuex statements to ./ns-example/app/main.*s
-    //     await vuexSetup(api, options, dirPathPrefix, jsOrTs);
-
-    //   })
-     
-    // } 
-
-    // Existing Project and is using Nativescript-Vue-Web
-    if(options.isNVW && !options.isNativeOnly) {
-      
-    } 
-
-    // Existing Project & Native Only -- should never be able to use Nativescript-Vue-Web
-    if(!options.isNVW && options.isNativeOnly) {
-
-      // api.render(async () => {
-      //   // render ./ns-example/app directory
-      //   await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
-
-      //   // add vuex statements to ./ns-example/app/main.*s
-      //   await vuexSetup(api, options, dirPathPrefix, jsOrTs);
-      // })
-      
-    }
-
-    if(options.isNVW && options.isNativeOnly) {
-      // should never reach this block of code
-    }
 
   }
 
-
   api.onCreateComplete(() => {
 
+    // make changes to .gitignore
     gitignoreAdditions(api);
-    writeRootFiles(dirPathPrefix);
+
+    // create files in ./ or ./ns-example
+    writeRootFiles(api, dirPathPrefix);
+
+    // create nsconfig.json in ./ or ./ns-example
     nsconfigSetup(dirPathPrefix, api.resolve('nsconfig.json'));
     tslintSetup(dirPathPrefix, api.resolve('tslint.json'));
 
+    // we need to edit the tsconfig.json file in /app 
+    // for a Native only project to remove references to /src
+    if (options.isNativeOnly === 'native') {
+      tsconfigNativeOnlySetup(options, dirPathPrefix + 'app/tsconfig.json');
+    }
 
+    // the main difference between New and Existing for this section is
+    // that for New projects we are moving files around, but for
+    // existing projects we are copying files into ./ns-example
     if(options.isNewProject) {
-      //writeRootFiles(dirPathPrefix)
-      //nsconfigSetup(dirPathPrefix, api.resolve('nsconfig.json'));
 
+      // move type files out of src to ./ or ./ns-example
       if(api.hasPlugin('typescript')) {
-        //tslintSetup(dirPathPrefix, api.resolve('tslint.json'));
 
         fs.move('./src/shims-tsx.d.ts', dirPathPrefix + 'shims-tsx.d.ts', err => {
           if (err) throw err;
@@ -318,12 +270,15 @@ module.exports = async (api, options, rootOptions) => {
         fs.move('./src/shims-vue.d.ts', dirPathPrefix + 'shims-vue.d.ts', err => {
           if (err) throw err;
         });
+
+        // remove tsconfig.json file as we now have it in ./src and ./app
+        fs.remove('./tsconfig.json', err => {
+          if(err) throw err;
+        })
       }
 
       // for new projects that are native only, move files/dirs and delete others
-      if (options.isNativeOnly) {
-
-        tsconfigSetup(options, dirPathPrefix + 'app/tsconfig.json');
+      if (options.isNativeOnly === 'native') {
 
         // move store.js file from ./src to ./app
         if(api.hasPlugin('vuex')) {
@@ -350,11 +305,9 @@ module.exports = async (api, options, rootOptions) => {
       }
 
     } else {
-      //writeRootFiles(dirPathPrefix)
-      //nsconfigSetup(dirPathPrefix, api.resolve('nsconfig.json'));
 
+      // copy type files from ./src to ./ns-example
       if(api.hasPlugin('typescript')) {
-        //tslintSetup(dirPathPrefix, api.resolve('tslint.json'));
 
         fs.copy('./src/shims-tsx.d.ts', path.join(dirPathPrefix, 'shims-tsx.d.ts'), err => {
           if (err) throw err;
@@ -366,24 +319,19 @@ module.exports = async (api, options, rootOptions) => {
 
       }
 
+      if (options.isNativeOnly === 'native') {
 
-      // for existing projects that are native only, try and copy items from src
-      // but do not delete anythign in src.
-      if (options.isNativeOnly) {
-        tsconfigSetup(options, dirPathPrefix + 'app/tsconfig.json');
-
-        // move store.js file from ./src to ./app
+        // move store.js file from ./src to ./ns-example/app
         if(api.hasPlugin('vuex')) {
           fs.copy('./src/store' + jsOrTs, dirPathPrefix + 'app/store' + jsOrTs, err => {
             if(err) throw err;
           })
         }
 
-        // copy assets directory from ./src/assets to ./app/assets
+        // copy assets directory from ./src/assets to ./ns-example/app/assets
         fs.copy('./src/assets', dirPathPrefix + 'app/assets', err => {
           if (err) throw err;
         })
-
 
       }
 
@@ -395,6 +343,8 @@ module.exports = async (api, options, rootOptions) => {
 
 // setup vue-router options
 // will not setup any vue-router options for native app
+// for new projects it will write to changes as normal
+// and for existing projects it will write  changes to the ./ns-example directory
 const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrefix, jsOrTs) => {
 
   try {
@@ -410,22 +360,21 @@ const vueRouterSetup = module.exports.vueRouterSetup = async (api, filePathPrefi
 }
 
 // setup Vuex options
-// if it's native only, it will not do anything in /src directory
+// for new projects it will write to changes as normal
+// and for existing projects it will write  changes to the ./ns-example directory
 const vuexSetup = module.exports.vuexSetup = async (api, options, filePathPrefix, jsOrTs) => {
-  console.log('configing vuex');
+
   try {
 
     if (api.hasPlugin('vuex')) {
-      const prefix = filePathPrefix === './' ? '' :  filePathPrefix;
-
-      if (!options.isNativeOnly) {
+      if (options.isNativeOnly !== 'native') {
         api.injectImports(filePathPrefix.replace(/.\//, '') + 'src/main' + jsOrTs, `import store from 'src/store';`)
         api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'src/main' + jsOrTs, `store`)
 
         api.injectImports(filePathPrefix.replace(/.\//, '') + 'app/main' + jsOrTs, `import store from 'src/store';`)
         api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'app/main' + jsOrTs, `store`)
   
-      }  else {
+      }  else {  // if it's native only, it will not do anything in /src directory
         api.injectImports(filePathPrefix.replace(/.\//, '') + 'app/main' + jsOrTs, `import store from '@/store';`)
         api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'app/main' + jsOrTs, `store`)
       }
@@ -437,7 +386,9 @@ const vuexSetup = module.exports.vuexSetup = async (api, options, filePathPrefix
 
 }
 
-// write out babel.config.js options
+// write out babel.config.js options by adding options and replacing the base @vue/app
+// for new projects it will write to the root of the project
+// and for existing projects it will write it to the ./ns-example directory
 const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath) => {
 
   const babelReplaceOptions = {
@@ -468,26 +419,37 @@ const applyBabelConfig = module.exports.applyBabelConfig = async (api, filePath)
 }
 
 // write out files in the root of the project
-const writeRootFiles = module.exports.writeRootFiles = async (filePathPrefix) => {
+// this includes the environment files as well as a global types file for 
+// Typescript projects.  for new projects it will write files to the root of the project
+// and for existing projects it will write it to the ./ns-example directory
+const writeRootFiles = module.exports.writeRootFiles = async (api, filePathPrefix) => {
 
   try {
     const envDevelopmentAndroid = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
     const envDevelopmentIOS = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
-    const envDevelopmentWeb = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
     const envProductionAndroid = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=android' + newline + 'VUE_APP_MODE=native';
     const envProductionIOS = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=ios' + newline + 'VUE_APP_MODE=native';
-    const envProductionWeb = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
-    const globalTypes = 'declare const TNS_ENV: string;' + newline + 'declare const TNS_APP_PLATFORM: string;' + newline + 'declare const TNS_APP_MODE: string;';
-
-     
+  
     fs.writeFileSync(filePathPrefix + '.env.development.android', envDevelopmentAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
     fs.writeFileSync(filePathPrefix + '.env.development.ios', envDevelopmentIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrefix + '.env.development.web', envDevelopmentWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
     fs.writeFileSync(filePathPrefix + '.env.production.android', envProductionAndroid, { encoding: 'utf8' }, (err) => {if (err) throw err;});
     fs.writeFileSync(filePathPrefix + '.env.production.ios', envProductionIOS, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrefix + '.env.production.web', envProductionWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
-    fs.writeFileSync(filePathPrefix + 'globals.d.ts', globalTypes, { encoding: 'utf8' }, (err) => {if (err) throw err;});
 
+    // only write these out if we are also developing for the web
+    if(options.isNativeOnly === 'dual') {
+      const envDevelopmentWeb = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
+      const envProductionWeb = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
+
+      fs.writeFileSync(filePathPrefix + '.env.development.web', envDevelopmentWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+      fs.writeFileSync(filePathPrefix + '.env.production.web', envProductionWeb, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    }
+
+    // only write this out if we are using typescript
+    if(api.hasPlugin('typescript')) {
+      // this file is ultimately optional if you don't use any process.env.VARIABLE_NAME references in your code
+      const globalTypes = 'declare const TNS_ENV: string;' + newline + 'declare const TNS_APP_PLATFORM: string;' + newline + 'declare const TNS_APP_MODE: string;';
+      fs.writeFileSync(filePathPrefix + 'globals.d.ts', globalTypes, { encoding: 'utf8' }, (err) => {if (err) throw err;});
+    }
 
   } catch(err) {
     throw err
@@ -495,6 +457,7 @@ const writeRootFiles = module.exports.writeRootFiles = async (filePathPrefix) =>
 }
 
 // write .gitignore additions for native app exemptions
+// will make changes to the root .gitignore file regardless of new or exisiting project
 const gitignoreAdditions = module.exports.gitignoreAdditions = async (api) => {
   try {
     let gitignoreContent;
@@ -522,7 +485,8 @@ const gitignoreAdditions = module.exports.gitignoreAdditions = async (api) => {
 
 }
 
-// setup nsconfig.json file
+// setup nsconfig.json file.  for new projects it will write to the root of the project
+// and for existing projects it will write it to the ./ns-example directory
 const nsconfigSetup = module.exports.nsconfigSetup = async (dirPathPrefix, nsconfigPath) => {
   let nsconfigContent = '';
 
@@ -548,6 +512,8 @@ const nsconfigSetup = module.exports.nsconfigSetup = async (dirPathPrefix, nscon
 }
 
 // setup tslintSetup
+// for new projects it will write to the root of the project
+// and for existing projects it will write it to the ./ns-example directory
 const tslintSetup = module.exports.tslintSetup = async (dirPathPrefix, tslintPath) => {
   let tslintContent = '';
 
@@ -557,6 +523,12 @@ const tslintSetup = module.exports.tslintSetup = async (dirPathPrefix, tslintPat
     } else {
       return;
     }
+
+    if (tslintContent.linterOptions.exclude === undefined)
+      tslintContent.linterOptions.exclude = ['node_modules/**'];
+
+    if (tslintContent.exclude === undefined)
+      tslintContent.exclude = ['node_modules'];
 
     tslintContent.linterOptions.exclude = tslintContent.linterOptions.exclude.concat(['platforms/**', 'hooks/**'])
     tslintContent.exclude = tslintContent.exclude.concat(['platforms', 'hooks'])
@@ -572,10 +544,11 @@ const tslintSetup = module.exports.tslintSetup = async (dirPathPrefix, tslintPat
 
 }
 
-// setup tsconfigSetup
-const tsconfigSetup = module.exports.tsconfigSetup = async (options, tsconfigPath) => {
+// setup tsconfig for native only projects
+// for new projects it will write to ./app
+// and for existing projects it will write it to the ./ns-example/app directory
+const tsconfigNativeOnlySetup = module.exports.tsconfigNativeOnlySetup = async (options, tsconfigPath) => {
   let tsconfigContent = '';
-  console.log('options - ', options);
   try {
     if (fs.existsSync(tsconfigPath)) {
       tsconfigContent = JSON.parse(fs.readFileSync(tsconfigPath, { encoding: 'utf8' }));
@@ -583,7 +556,7 @@ const tsconfigSetup = module.exports.tsconfigSetup = async (options, tsconfigPat
       return;
     }
 
-    if(options.isNativeOnly) {
+    if(options.isNativeOnly === 'native') {
 
       delete tsconfigContent.compilerOptions.paths['src/*'];
       delete tsconfigContent.compilerOptions.paths['assets/*'];
@@ -632,7 +605,8 @@ const renderFilesIndividually = module.exports.renderFilesIndividually = async (
       if(file.slice(-3) === '.js' || file.slice(-3) === '.ts')
         newFile = file.substring(0, file.length - 3) + jsOrTs;
 
-      obj[path.join(destPathPrefix, newFile)] = path.join(srcPathPrefix, file);
+      if ((!api.hasPlugin('typescript') && file !== 'tsconfig.json') || api.hasPlugin('typescript'))
+        obj[path.join(destPathPrefix, newFile)] = path.join(srcPathPrefix, file);
     }
 
     api.render(obj, opts);
@@ -683,14 +657,10 @@ const renderDirectory = module.exports.renderDirectory = async (api, jsOrTs, opt
 
 }
 
+// utility function used to remove items from an array that match 'item'
 const removeFromArray = module.exports.removeFromArray = async (array, item) => {
-  //onsole.log('array - ', array);
-  console.log('item - ', item);
   const index = array.indexOf(item);
-  console.log('index - ', index);
-
-  if (index !== -1) array.splice(index, 1); 
-  console.log('array - ', array);
-
+  if (index !== -1) 
+    array.splice(index, 1); 
   return array;
 }

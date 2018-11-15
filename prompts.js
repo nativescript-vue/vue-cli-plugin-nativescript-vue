@@ -33,9 +33,19 @@ Example: com.company.app`
   },
   {
     name: 'isNativeOnly',
-    type: 'confirm',
-    message: 'Is this for a Native only project and not also for browsers? (Default: No)',
-    default: false
+    type: 'list',
+    message: 'Do you want a dual Native and Web setup or a Native only setup?',
+    choices: [
+      {
+        name: 'Dual Native and Web setup',
+        value: 'dual'
+      },
+      {
+        name: 'Native only setup',
+        value: 'native'
+      }
+    ],
+    default: 'dual'
   },
   {
     name: 'isNVW',
@@ -45,13 +55,12 @@ Example: com.company.app`
   },
   {
     name: 'templateType',
-    type: 'checkbox',
+    type: 'list',
     message: 'What type of template do you want to start with? (Default: Simple)',
     choices: [
       {
         name: 'Simple',
-        value: 'simple',
-        checked: true
+        value: 'simple'
       },
       {
         name: 'Sidebar (not yet implemented)',

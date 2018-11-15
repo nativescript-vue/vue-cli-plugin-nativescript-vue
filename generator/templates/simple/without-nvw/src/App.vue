@@ -33,11 +33,11 @@
     components: {
       HelloWorld
     },
-    data () {
+    data() {
       return {
-        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM,
       };
-    }
+    },
   };
 
 </script>AboutNativeVue
@@ -50,11 +50,11 @@
     components: {
       HelloWorld
     },
-    data () {
+    data() {
       return {
-        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM,
       };
-    }
+    },
   };
 
 </script>
@@ -63,11 +63,11 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.vue not typescript'
+        navbarTitle: 'App.vue not typescript',
       };
-    }
+    },
   };
 
 </script>
@@ -76,11 +76,11 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.vue with TS'
+        navbarTitle: 'App.vue with TS',
       };
-    }
+    },
   };
 
 </script>

@@ -53,6 +53,7 @@
     "exclude": [
       "node_modules",
       "platforms",
-      "hooks"
+      "hooks",
+      "app"
     ]
   }

@@ -21,7 +21,7 @@ Vue.config.productionTip = false;
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-(h) => h(App)
+(h) => h(App),
 <%# END_REPLACE %>
 
 <%# REPLACE %>

@@ -29,19 +29,19 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.ios.vue'
+        navbarTitle: 'App.ios.vue',
       };
     },
     methods: {
-      goToHomePage () {
+      goToHomePage() {
         this.$navigateTo(Home);
       },
-      goToAboutPage () {
+      goToAboutPage() {
         this.$navigateTo(About);
-      }
-    }
+      },
+    },
   };
 
 </script>
@@ -52,19 +52,19 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.ios.vue'
+        navbarTitle: 'App.ios.vue',
       };
     },
     methods: {
-      goToHomePage () {
+      goToHomePage() {
         (this as any).$navigateTo(Home);
       },
-      goToAboutPage () {
+      goToAboutPage() {
         (this as any).$navigateTo(About);
-      }
-    }
+      },
+    },
   };
 
 </script>
@@ -76,19 +76,19 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.ios.vue'
+        navbarTitle: 'App.ios.vue',
       };
     },
     methods: {
-      goToHomePage () {
+      goToHomePage() {
         this.$navigateTo(Home);
       },
-      goToAboutPage () {
+      goToAboutPage() {
         this.$navigateTo(About);
-      }
-    }
+      },
+    },
   };
 
 </script>
@@ -100,19 +100,19 @@
 
   export default {
 
-    data () {
+    data() {
       return {
-        navbarTitle: 'App.ios.vue'
+        navbarTitle: 'App.ios.vue',
       };
     },
     methods: {
-      goToHomePage () {
+      goToHomePage() {
         (this as any).$navigateTo(Home);
       },
-      goToAboutPage () {
+      goToAboutPage() {
         (this as any).$navigateTo(About);
-      }
-    }
+      },
+    },
   };
 
 </script>

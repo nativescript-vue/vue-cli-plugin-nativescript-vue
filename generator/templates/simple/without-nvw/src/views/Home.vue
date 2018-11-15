@@ -15,13 +15,13 @@
   export default {
     name: 'home',
     components: {
-      HelloWorld
+      HelloWorld,
     },
-    data () {
+    data() {
       return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
       };
-    }
+    },
   };
 
 </script>
@@ -32,13 +32,13 @@
   export default {
     name: 'home',
     components: {
-      HelloWorld
+      HelloWorld,
     },
-    data () {
+    data() {
       return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
       };
-    }
+    },
   };
 
 </script>
