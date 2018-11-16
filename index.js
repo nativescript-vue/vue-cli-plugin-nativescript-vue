@@ -15,9 +15,9 @@ const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
 const { NativeScriptWorkerPlugin } = require("nativescript-worker-loader/NativeScriptWorkerPlugin");
 
 const resolveExtensionsOptions = {
-  web: [ '.js', '.jsx', '.ts', '.tsx', '.vue', '.json' ],
-  android: [ '.native.js', '.andriod.js', '.js', '.native.ts', '.andriod.ts', '.ts', '.native.vue', '.andriod.vue', '.vue', '.json' ],
-  ios: [ '.native.js', '.ios.js', '.js', '.native.ts', '.ios.ts', '.ts', '.native.vue', '.ios.vue', '.vue', '.json' ],
+  web: [ '.js', '.jsx', '.ts', '.tsx', '.vue', '.json', '.scss' ],
+  android: [ '.native.js', '.android.js', '.js', '.native.ts', '.android.ts', '.ts', '.native.vue', '.android.vue', '.vue', '.json', '.native.scss' ],
+  ios: [ '.native.js', '.ios.js', '.js', '.native.ts', '.ios.ts', '.ts', '.native.vue', '.ios.vue', '.vue', '.json', '.native.scss' ],
 }
 
 
@@ -27,7 +27,7 @@ module.exports = (api, projectOptions) => {
   const platform = process.env.VUE_APP_PLATFORM //&& (process.env.VUE_PLATFORM && "android" || process.env.VUE_PLATFORM && "ios" || process.env.VUE_PLATFORM && "web");
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
   process.env.VUE_APP_MODE = appMode;
-  
+
   projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'platforms/web' : nsWebpack.getAppPath(platform, api.service.context));
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, appMode) : nativeConfig(api, projectOptions, env, platform);
@@ -42,7 +42,7 @@ const resolveExtensions = (config, ext) => {
     .extensions
       .add(ext)
       .end()
-}  
+}
 
 const nativeConfig = (api, projectOptions, env, platform) => {
   process.env.VUE_CLI_TARGET = 'nativescript'
@@ -66,10 +66,10 @@ const nativeConfig = (api, projectOptions, env, platform) => {
 
     // You can provide the following flags when running 'tns run android|ios'
     snapshot,
-    production, 
-    report, 
-    hmr, 
-  } = env;  
+    production,
+    report,
+    hmr,
+  } = env;
 
 
   const appFullPath = appPath
@@ -119,7 +119,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           .end();
 
 
-       
+
   config.resolve.extensions.clear();
   resolveExtensions(config, '.scss');
   resolveExtensions(config,'.css');
@@ -216,7 +216,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
                 safari10: platform === "ios",
                 keep_fnames: true,
             },
-        }),        
+        }),
       ])
       .end()
 
@@ -228,12 +228,12 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           .options({
             registerPages: true, // applicable only for non-angular apps
             loadCss: !snapshot, // load the application css if in debug mode
-          })       
-        .end()  
+          })
+        .end()
 
     config.when(platform === 'android', config => {
       config.module
-        .rule('native-loaders')    
+        .rule('native-loaders')
           .use('nativescript-dev-webpack/android-app-components-loader')
             .loader('nativescript-dev-webpack/android-app-components-loader')
             .options({
@@ -242,7 +242,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
             .before('nativescript-dev-webpack/bundle-config-loader')
             .end()
     })
-    
+
     // delete the vue loader rule and rebuid it
     config.module.rules.delete('vue')
     config.module
@@ -281,7 +281,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
         .use('css-loader')
           .loader('css-loader')
           .options(Object.assign({
-            minimize: false, 
+            minimize: false,
             url: false,
         }, {}))
         .end()
@@ -303,7 +303,7 @@ const nativeConfig = (api, projectOptions, env, platform) => {
           .use('css-loader')
             .loader('css-loader')
             .options(Object.assign({
-              minimize: false, 
+              minimize: false,
               url: false,
             }, {}))
             .before()
@@ -461,7 +461,7 @@ const webConfig = (api, projectOptions, env, appMode) => {
       .end()
 
     config.resolve.extensions.clear();
-  
+
     for(let ext of resolveExtensionsOptions.web) {
       resolveExtensions(config, ext);
     }
@@ -512,7 +512,7 @@ const webConfig = (api, projectOptions, env, appMode) => {
 //       '--ios': 'run in ios simulator',
 //       '--release': 'run in release mode',
 //     }
-//   }, args => { 
+//   }, args => {
 //     return require('./lib/commands/tns')(args, api)
 //   })
 
@@ -537,7 +537,7 @@ const webConfig = (api, projectOptions, env, appMode) => {
   //     '--ios': 'run in ios simulator',
   //     '--release': 'run in release mode',
   //   }
-  // }, args => { 
+  // }, args => {
   //   return require('./lib/commands/tns')(args, api)
   // })
 
@@ -550,7 +550,7 @@ const webConfig = (api, projectOptions, env, appMode) => {
   //     '--ios': 'run in ios simulator',
   //     '--release': 'run in release mode',
   //   }
-  // }, args => { 
+  // }, args => {
   //   return require('./lib/commands/tns')(args, api)
   // })
 //}
