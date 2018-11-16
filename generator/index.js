@@ -16,7 +16,7 @@ module.exports = (api, options, rootOptions) => {
 
   if(options.isNativeOnly)
     options.isNVW = false;
-  
+
   const commonRenderOptions = {
     applicationName: api.generator.pkg.name,
     applicationVersion: api.generator.pkg.version,
@@ -54,6 +54,7 @@ module.exports = (api, options, rootOptions) => {
       },
     dependencies: {
       'nativescript-vue': '^2.0.2',
+      'nativescript-vue-web': '^0.8.0',
       'tns-core-modules': '^4.2.1',
     },
     devDependencies: {
@@ -98,6 +99,10 @@ module.exports = (api, options, rootOptions) => {
       delete pkg.browserslist
     }
 
+    if(options.isNativeOnly || !options.isNVW){
+      delete pkg.dependencies['nativescript-vue-web']
+    }
+
   })
 
 
@@ -111,25 +116,39 @@ module.exports = (api, options, rootOptions) => {
     // New Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
       api.render('./templates/simple/without-nvw/new', commonRenderOptions)
-  
+
       if(api.hasPlugin('vue-router')){
         api.injectImports('src/main.js', `import router from '~/router'`)
         api.injectRootOptions('src/main.js', `router`)
       }
-  
+
       if(api.hasPlugin('vuex')){
         api.injectImports('src/main.js', `import store from '~/store'`)
         api.injectRootOptions('src/main.js', `store`)
         api.injectImports('app/main.js', `import store from 'src/store'`)
         api.injectRootOptions('app/main.js', `store`)
-  
+
       }
-    } 
+    }
 
     // New Project and is using Nativescript-Vue-Web
     if(options.isNVW && !options.isNativeOnly) {
-      
-    } 
+      console.log("burası");
+      api.render('./templates/simple/with-nvw/new', commonRenderOptions);
+
+      if(api.hasPlugin('vue-router')){
+        api.injectImports('src/main.js', `import router from '~/router'`)
+        api.injectRootOptions('src/main.js', `router`)
+      }
+
+      if(api.hasPlugin('vuex')){
+        api.injectImports('src/main.js', `import store from '~/store'`)
+        api.injectRootOptions('src/main.js', `store`)
+        api.injectImports('app/main.js', `import store from 'src/store'`)
+        api.injectRootOptions('app/main.js', `store`)
+
+      }
+    }
 
     // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
@@ -139,19 +158,19 @@ module.exports = (api, options, rootOptions) => {
     if(options.isNativeOnly && options.isNVW) {
       // should never reach this block of code
     }
-  
+
 
   } else { // Exising Project
 
     // Existing Project and not using Nativescript-Vue-Web
     if(!options.isNVW && !options.isNativeOnly) {
       api.render('./templates/simple/without-nvw/existing', commonRenderOptions)
-    } 
+    }
 
     // Existing Project and is using Nativescript-Vue-Web
     if(options.isNVW && !options.isNativeOnly) {
-      
-    } 
+
+    }
 
     // Existing Project & Native Only -- should never be able to use Nativescript-Vue-Web
     if(!options.isNVW && options.isNativeOnly) {
@@ -164,10 +183,10 @@ module.exports = (api, options, rootOptions) => {
 
   }
 
-  
- 
 
- 
+
+
+
   api.onCreateComplete(() => {
 
     const newline = process.platform === 'win32' ? '\r\n' : '\n';
@@ -253,6 +272,6 @@ module.exports = (api, options, rootOptions) => {
 
   })
 
-  
+
 
 }
