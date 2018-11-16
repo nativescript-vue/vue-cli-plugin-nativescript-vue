@@ -6,13 +6,13 @@ const newline = process.platform === 'win32' ? '\r\n' : '\n';
 
 module.exports = async (api, options, rootOptions) => {
 
-  console.log('options.isNativeOnly - ', options.isNativeOnly)
-  console.log('options.isNVW - ', options.isNVW)
-  console.log('options.isNewProject - ', options.isNewProject)
-  console.log('options.templateType - ', options.templateType);
+  // console.log('options.isNativeOnly - ', options.isNativeOnly)
+  // console.log('options.isNVW - ', options.isNVW)
+  // console.log('options.isNewProject - ', options.isNewProject)
+  // console.log('options.templateType - ', options.templateType);
 
-  console.log('usingTS - ', api.hasPlugin('typescript'))
-  console.log('usingBabel - ', api.hasPlugin('babel'))
+  // console.log('usingTS - ', api.hasPlugin('typescript'))
+  // console.log('usingBabel - ', api.hasPlugin('babel'))
 
 
   // if it is a new project changes will be written as they normally would with any plugin
