@@ -12,12 +12,14 @@ const NsVueTemplateCompiler = require("nativescript-vue-template-compiler");
 const nsWebpack = require("nativescript-dev-webpack");
 const PlatformFSPlugin = nsWebpack.PlatformFSPlugin;
 const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
-const { NativeScriptWorkerPlugin } = require("nativescript-worker-loader/NativeScriptWorkerPlugin");
+const {
+  NativeScriptWorkerPlugin
+} = require("nativescript-worker-loader/NativeScriptWorkerPlugin");
 
 const resolveExtensionsOptions = {
-  web: [ '.js', '.jsx', '.ts', '.tsx', '.vue', '.json' ],
-  android: [ '.native.js', '.andriod.js', '.js', '.native.ts', '.andriod.ts', '.ts', '.native.vue', '.andriod.vue', '.vue', '.json' ],
-  ios: [ '.native.js', '.ios.js', '.js', '.native.ts', '.ios.ts', '.ts', '.native.vue', '.ios.vue', '.vue', '.json' ],
+  web: ['.js', '.jsx', '.ts', '.tsx', '.vue', '.json', '.scss'],
+  android: ['.native.js', '.android.js', '.js', '.native.ts', '.android.ts', '.ts', '.native.vue', '.android.vue', '.vue', '.json', 'native.scss'],
+  ios: ['.native.js', '.ios.js', '.js', '.native.ts', '.ios.ts', '.ts', '.native.vue', '.ios.vue', '.vue', '.json', 'native.scss'],
 }
 
 
@@ -25,25 +27,23 @@ module.exports = (api, projectOptions) => {
 
   const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js'
   const env = process.env.NODE_ENV;
-  const platform = process.env.VUE_APP_PLATFORM //&& (process.env.VUE_PLATFORM && "android" || process.env.VUE_PLATFORM && "ios" || process.env.VUE_PLATFORM && "web");
+  const platform = process.env.VUE_APP_PLATFORM
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
   process.env.VUE_APP_MODE = appMode;
-  
+
   projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'platforms/web' : nsWebpack.getAppPath(platform, api.service.context));
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, appMode, jsOrTs) : nativeConfig(api, projectOptions, env, platform, jsOrTs);
-
-
 
 }
 
 const resolveExtensions = (config, ext) => {
   config
-  .resolve
+    .resolve
     .extensions
-      .add(ext)
-      .end()
-}  
+    .add(ext)
+    .end()
+}
 
 const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
   console.log('starting nativeConfig')
@@ -64,14 +64,14 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     // the nsconfig.json configuration file
     // when bundling with `tns run android|ios --bundle`.
     appPath = api.resolve('app'),
-    appResourcesPath = path.join(appPath, 'App_Resources'),
+      appResourcesPath = path.join(appPath, 'App_Resources'),
 
-    // You can provide the following flags when running 'tns run android|ios'
-    snapshot,
-    production, 
-    report, 
-    hmr, 
-  } = env;  
+      // You can provide the following flags when running 'tns run android|ios'
+      snapshot,
+      production,
+      report,
+      hmr,
+  } = env;
 
   const nativeOnly = fs.pathExistsSync(path.resolve(projectRoot, 'src'));
 
@@ -91,11 +91,11 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
 
     config
       .watchOptions({
-          ignored: [
-              appResourcesFullPath,
-              // Don't watch hidden files
-              "**/.*",
-          ],
+        ignored: [
+          appResourcesFullPath,
+          // Don't watch hidden files
+          "**/.*",
+        ],
       })
       .target(nativescriptTarget)
       .end();
@@ -103,10 +103,10 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     config
       // clear out old config.entryPoints and install new
       .entryPoints
-          .clear()
-          .end()
+      .clear()
+      .end()
       .entry('bundle')
-          .add(entryPath)
+      .add(entryPath)
       .end();
 
     // clear out old config.output and install new
@@ -114,71 +114,71 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .output.clear()
       .end()
       .output
-          .path(projectOptions.outputDir)
-          .pathinfo(false)
-          .libraryTarget('commonjs2')
-          .globalObject('global')
-          .filename(`[name].js`)
-          .end();
+      .path(projectOptions.outputDir)
+      .pathinfo(false)
+      .libraryTarget('commonjs2')
+      .globalObject('global')
+      .filename(`[name].js`)
+      .end();
 
 
-  // next several use the resolveExtension function to easily
-  // and in resolve.extensions from an object array const 
-  // or directly from a string  
-  config.resolve.extensions.clear();
-  resolveExtensions(config, '.scss');
-  resolveExtensions(config,'.css');
+    // next several use the resolveExtension function to easily
+    // and in resolve.extensions from an object array const 
+    // or directly from a string  
+    config.resolve.extensions.clear();
+    resolveExtensions(config, '.scss');
+    resolveExtensions(config, '.css');
 
-  if(platform === 'android') {
-    for(let ext of resolveExtensionsOptions.android) {
-      resolveExtensions(config, ext);
+    if (platform === 'android') {
+      for (let ext of resolveExtensionsOptions.android) {
+        resolveExtensions(config, ext);
+      }
+    } else {
+      for (let ext of resolveExtensionsOptions.ios) {
+        resolveExtensions(config, ext);
+      }
     }
-  } else {
-    for(let ext of resolveExtensionsOptions.ios) {
-      resolveExtensions(config, ext);
-    }
-  }
-
-   config
-        .resolve
-            // Resolve {N} system modules from tns-core-modules
-            .modules
-                .add(path.resolve(api.service.context, tnsCorePath))
-                .add(tnsCorePath)
-                .add('node_modules/tns-core-modules')
-                .add('node_modules')
-                .end()
-            .alias
-                .delete('vue$')
-                .delete('@')
-                .set('@', appFullPath)
-                .set('~', appFullPath)
-                .set('src', api.resolve('src'))
-                .set('assets', path.resolve(api.resolve('src'), 'assets'))
-                .set('components', path.resolve(api.resolve('src'), 'components'))
-                .set('fonts', path.resolve(api.resolve('src'), 'fonts'))
-                .set('root', projectRoot)
-                .set('vue$', 'nativescript-vue')
-                .end()
-            .symlinks(false)  // don't resolve symlinks to symlinked modules
-            .end();
 
     config
-        .resolveLoader
-            .symlinks(false)  //  don't resolve symlinks to symlinked modules
-            .modules
-              .add(tnsCorePath)
-              .end()
-            .end();
+      .resolve
+      // Resolve {N} system modules from tns-core-modules
+      .modules
+      .add(path.resolve(api.service.context, tnsCorePath))
+      .add(tnsCorePath)
+      .add('node_modules/tns-core-modules')
+      .add('node_modules')
+      .end()
+      .alias
+      .delete('vue$')
+      .delete('@')
+      .set('@', appFullPath)
+      .set('~', appFullPath)
+      .set('src', api.resolve('src'))
+      .set('assets', path.resolve(api.resolve('src'), 'assets'))
+      .set('components', path.resolve(api.resolve('src'), 'components'))
+      .set('fonts', path.resolve(api.resolve('src'), 'fonts'))
+      .set('root', projectRoot)
+      .set('vue$', 'nativescript-vue')
+      .end()
+      .symlinks(false) // don't resolve symlinks to symlinked modules
+      .end();
 
     config
-        .node
-          .set('setImmediate', false)
-          .set('http', false)
-          .set('timers', false)
-          .set('fs', 'empty')
-          .set('__dirname', false)
-          .end();
+      .resolveLoader
+      .symlinks(false) //  don't resolve symlinks to symlinked modules
+      .modules
+      .add(tnsCorePath)
+      .end()
+      .end();
+
+    config
+      .node
+      .set('setImmediate', false)
+      .set('http', false)
+      .set('timers', false)
+      .set('fs', 'empty')
+      .set('__dirname', false)
+      .end();
 
 
     config.optimization
@@ -186,91 +186,91 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .end()
 
     config.optimization
-      .splitChunks( {
-          cacheGroups: {
-              vendor: {
-                  name: "vendor",
-                  chunks: "all",
-                  test: (module) => {
-                      const moduleName = module.nameForCondition ? module.nameForCondition() : '';
-                      return /[\\/]node_modules[\\/]/.test(moduleName) ||
-                          appComponents.some(comp => comp === moduleName);
+      .splitChunks({
+        cacheGroups: {
+          vendor: {
+            name: "vendor",
+            chunks: "all",
+            test: (module) => {
+              const moduleName = module.nameForCondition ? module.nameForCondition() : '';
+              return /[\\/]node_modules[\\/]/.test(moduleName) ||
+                appComponents.some(comp => comp === moduleName);
 
-                  },
-                  enforce: true,
-              },
+            },
+            enforce: true,
           },
+        },
       })
       .end()
 
     config.optimization
       .minimizer([
-          new TerserPlugin({
-            parallel: true,
-            cache: true,
-            terserOptions: {
-                output: {
-                    comments: false,
-                },
-                compress: {
-                    // The Android SBG has problems parsing the output
-                    // when these options are enabled
-                    'collapse_vars': platform !== "android",
-                    sequences: platform !== "android",
-                },
-                safari10: platform === "ios",
-                keep_fnames: true,
+        new TerserPlugin({
+          parallel: true,
+          cache: true,
+          terserOptions: {
+            output: {
+              comments: false,
             },
-        }),        
+            compress: {
+              // The Android SBG has problems parsing the output
+              // when these options are enabled
+              'collapse_vars': platform !== "android",
+              sequences: platform !== "android",
+            },
+            safari10: platform === "ios",
+            keep_fnames: true,
+          },
+        }),
       ])
       .end()
 
     config.module
       .rule('native-loaders')
-        .test(new RegExp(entryPath))
-        .use('nativescript-dev-webpack/bundle-config-loader')
-          .loader('nativescript-dev-webpack/bundle-config-loader')
-          .options({
-            registerPages: true, // applicable only for non-angular apps
-            loadCss: !snapshot, // load the application css if in debug mode
-          })       
-        .end()  
+      .test(new RegExp(entryPath))
+      .use('nativescript-dev-webpack/bundle-config-loader')
+      .loader('nativescript-dev-webpack/bundle-config-loader')
+      .options({
+        registerPages: true, // applicable only for non-angular apps
+        loadCss: !snapshot, // load the application css if in debug mode
+      })
+      .end()
 
     config.when(platform === 'android', config => {
       config.module
-        .rule('native-loaders')    
-          .use('nativescript-dev-webpack/android-app-components-loader')
-            .loader('nativescript-dev-webpack/android-app-components-loader')
-            .options({
-              modules: appComponents
-            })
-            .before('nativescript-dev-webpack/bundle-config-loader')
-            .end()
+        .rule('native-loaders')
+        .use('nativescript-dev-webpack/android-app-components-loader')
+        .loader('nativescript-dev-webpack/android-app-components-loader')
+        .options({
+          modules: appComponents
+        })
+        .before('nativescript-dev-webpack/bundle-config-loader')
+        .end()
     })
-    
+
     // delete the vue loader rule and rebuild it
     config.module.rules.delete('vue')
     config.module
       .rule('vue')
-        .test(/\.vue$/)
-        .use('vue-loader')
-          .loader('vue-loader')
-          .options(Object.assign({
-              compiler: NsVueTemplateCompiler,
-          }, {}))
-          .before('string-replace-loader')
-          .end()
+      .test(/\.vue$/)
+      .use('vue-loader')
+      .loader('vue-loader')
+      .options(Object.assign({
+        compiler: NsVueTemplateCompiler,
+      }, {}))
+      .before('string-replace-loader')
+      .end()
 
     // delete the js loader rule and rebuil it
     config.module.rules.delete('js')
     config.module
       .rule('js')
-        .test(/\.jsx?$/)
-        .use('babel-loader')
-          .loader('babel-loader')
-          .end()
+      .test(/\.jsx?$/)
+      .use('babel-loader')
+      .loader('babel-loader')
+      .end()
 
-    
+
     // only adjust ts-loaders when we're using typescript in the project
     if (api.hasPlugin('typescript')) {
       const tsConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
@@ -278,22 +278,22 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
 
       config.module
         .rule('ts')
-          .test(/\.ts$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsConfigOptions)
-            .end()
+        .test(/\.ts$/)
+        .use('ts-loader')
+        .loader('ts-loader')
+        .options(tsConfigOptions)
+        .end()
 
       const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
       tsxConfigOptions.configFile = path.resolve(api.resolve('app'), 'tsconfig.json');
 
       config.module
         .rule('tsx')
-          .test(/\.tsx$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsxConfigOptions)
-            .end()
+        .test(/\.tsx$/)
+        .use('ts-loader')
+        .loader('ts-loader')
+        .options(tsxConfigOptions)
+        .end()
 
     }
 
@@ -301,47 +301,47 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     config.module.rules.delete('css')
     config.module
       .rule('css')
-        .test(/\.css$/)
-        .use('nativescript-dev-webpack/style-hot-loader')
-          .loader('nativescript-dev-webpack/style-hot-loader')
-          .before('nativescript-dev-webpack/apply-css-loader')
-          .end()
-        .use('nativescript-dev-webpack/apply-css-loader')
-          .loader('nativescript-dev-webpack/apply-css-loader')
-          .before('css-loader')
-          .end()
-        .use('css-loader')
-          .loader('css-loader')
-          .options(Object.assign({
-            minimize: false, 
-            url: false,
-        }, {}))
-        .end()
+      .test(/\.css$/)
+      .use('nativescript-dev-webpack/style-hot-loader')
+      .loader('nativescript-dev-webpack/style-hot-loader')
+      .before('nativescript-dev-webpack/apply-css-loader')
+      .end()
+      .use('nativescript-dev-webpack/apply-css-loader')
+      .loader('nativescript-dev-webpack/apply-css-loader')
+      .before('css-loader')
+      .end()
+      .use('css-loader')
+      .loader('css-loader')
+      .options(Object.assign({
+        minimize: false,
+        url: false,
+      }, {}))
+      .end()
 
 
     // delete the scss rule and rebuild it
     config.module.rules.delete('scss')
-      config.module
-        .rule('scss')
-          .test(/\.scss$/)
-          .use('nativescript-dev-webpack/style-hot-loader')
-            .loader('nativescript-dev-webpack/style-hot-loader')
-            .before('nativescript-dev-webpack/apply-css-loader')
-            .end()
-          .use('nativescript-dev-webpack/apply-css-loader')
-            .loader('nativescript-dev-webpack/apply-css-loader')
-            .before('css-loader')
-            .end()
-          .use('css-loader')
-            .loader('css-loader')
-            .options(Object.assign({
-              minimize: false, 
-              url: false,
-            }, {}))
-            .before()
-            .end()
-          .use('sass-loader')
-            .loader('sass-loader')
+    config.module
+      .rule('scss')
+      .test(/\.scss$/)
+      .use('nativescript-dev-webpack/style-hot-loader')
+      .loader('nativescript-dev-webpack/style-hot-loader')
+      .before('nativescript-dev-webpack/apply-css-loader')
+      .end()
+      .use('nativescript-dev-webpack/apply-css-loader')
+      .loader('nativescript-dev-webpack/apply-css-loader')
+      .before('css-loader')
+      .end()
+      .use('css-loader')
+      .loader('css-loader')
+      .options(Object.assign({
+        minimize: false,
+        url: false,
+      }, {}))
+      .before()
+      .end()
+      .use('sass-loader')
+      .loader('sass-loader')
 
 
     // delete these rules that come standard with CLI 3
@@ -356,7 +356,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     config.module.rules.delete('less')
     config.module.rules.delete('stylus')
     config.module.rules.delete('eslint')
-    .end();
+      .end();
 
 
     // delete these plugins that come standard with CLI 3
@@ -367,25 +367,27 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     config.plugins.delete('pwa')
     config.plugins.delete('progress')
     config.plugins.delete('copy')
-    .end();
+      .end();
 
     // create new plugins
 
     // Define useful constants like TNS_WEBPACK
     config.plugin('define')
       .use(DefinePlugin, [{
-          "global.TNS_WEBPACK": "true",
-          'process.env': {
-            "TNS_ENV": JSON.stringify(env),
-            'TNS_APP_PLATFORM': JSON.stringify(platform),
-            'TNS_APP_MODE': JSON.stringify(process.env.VUE_APP_MODE)
-          }
+        "global.TNS_WEBPACK": "true",
+        'process.env': {
+          "TNS_ENV": JSON.stringify(env),
+          'TNS_APP_PLATFORM': JSON.stringify(platform),
+          'TNS_APP_MODE': JSON.stringify(process.env.VUE_APP_MODE)
+        }
       }])
       .end()
 
     // Remove all files from the out dir.
     config.plugin('clean')
-      .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {root: projectOptions.outputDir}])
+      .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {
+        root: projectOptions.outputDir
+      }])
       .end();
 
     // Copy native app resources to out dir.
@@ -393,7 +395,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       .use(CopyWebpackPlugin, [
         [{
           from: path.join(appResourcesFullPath, appResourcesPlatformDir),
-          to: path.join(projectOptions.outputDir, 'App_Resources', appResourcesPlatformDir ),
+          to: path.join(projectOptions.outputDir, 'App_Resources', appResourcesPlatformDir),
           context: projectRoot,
         }]
       ])
@@ -405,21 +407,49 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
     // that point, the src directory should have been removed 
     // when the plugin was originally invoked.
     config.plugin('copy-assets')
-      .use(CopyWebpackPlugin, [[
-          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'fonts/**')}, to: path.join(projectOptions.outputDir, 'fonts/' ), flatten: true},
-          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.jpg')}, to: path.join(projectOptions.outputDir, 'assets' ), flatten: true},
-          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.png')}, to: path.join(projectOptions.outputDir, 'assets/' ), flatten: true},
-          { from: {glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'assets/**/*')}, to: path.join(projectOptions.outputDir, 'assets/'), flatten: true},
-        ],{ ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]}
+      .use(CopyWebpackPlugin, [
+        [{
+            from: {
+              glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'fonts/**')
+            },
+            to: path.join(projectOptions.outputDir, 'fonts/'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.jpg')
+            },
+            to: path.join(projectOptions.outputDir, 'assets'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), '**/*.png')
+            },
+            to: path.join(projectOptions.outputDir, 'assets/'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(nativeOnly === false ? api.resolve('app') : api.resolve('src'), 'assets/**/*')
+            },
+            to: path.join(projectOptions.outputDir, 'assets/'),
+            flatten: true
+          },
+        ], {
+          ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]
+        }
       ])
       .end();
 
     // Generate a bundle starter script and activate it in package.json
     config.plugin('generate-bundle-starter')
-      .use(nsWebpack.GenerateBundleStarterPlugin, [[
-        './vendor',
-        './bundle'
-      ]])
+      .use(nsWebpack.GenerateBundleStarterPlugin, [
+        [
+          './vendor',
+          './bundle'
+        ]
+      ])
       .end();
 
     // For instructions on how to set up workers with webpack
@@ -453,7 +483,7 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
       forTSPluginConfig.tslint = path.resolve(projectRoot, 'tslint.json');
 
       config.plugins.delete('fork-ts-checker')
-      .end();
+        .end();
 
       config.plugin('fork-ts-checker')
         .use(ForkTsCheckerWebpackPlugin, [forTSPluginConfig])
@@ -501,8 +531,8 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
 
     config
       .output
-          .path(projectOptions.outputDir)
-          .end();
+      .path(projectOptions.outputDir)
+      .end();
 
     config.resolve.alias
       .delete('@')
@@ -516,28 +546,28 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
       .end()
 
     config.resolve.extensions.clear();
-  
-    for(let ext of resolveExtensionsOptions.web) {
+
+    for (let ext of resolveExtensionsOptions.web) {
       resolveExtensions(config, ext);
     }
 
     config.module
-        .rule('vue')
-            .use('cache-loader')
-                .loader('cache-loader')
-                .tap(options => {
-                    options.cacheDirectory = config.module.rule('vue').uses.get('cache-loader').get('options').cacheDirectory + '\\' + appMode;
-                    return options;
-                })
-                .end()
-            .use('vue-loader')
-                .loader('vue-loader')
-                .options(Object.assign({
-                    //compiler: NsVueTemplateCompiler,
-                }, config.module.rule('vue').uses.get('vue-loader').get('options')))
-                .end()
+      .rule('vue')
+      .use('cache-loader')
+      .loader('cache-loader')
+      .tap(options => {
+        options.cacheDirectory = config.module.rule('vue').uses.get('cache-loader').get('options').cacheDirectory + '\\' + appMode;
+        return options;
+      })
+      .end()
+      .use('vue-loader')
+      .loader('vue-loader')
+      .options(Object.assign({
+        //compiler: NsVueTemplateCompiler,
+      }, config.module.rule('vue').uses.get('vue-loader').get('options')))
+      .end()
 
-    
+
 
     // Define useful constants like TNS_WEBPACK
     config.plugin('define')
@@ -552,7 +582,9 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
 
     // Remove all files from the out dir.
     config.plugin('clean')
-      .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {root: projectOptions.outputDir}] )
+      .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {
+        root: projectOptions.outputDir
+      }])
       .end();
 
     // only adjust ts-loaders when we're using typescript in the project
@@ -562,22 +594,22 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
 
       config.module
         .rule('ts')
-          .test(/\.ts$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsConfigOptions)
-            .end()
+        .test(/\.ts$/)
+        .use('ts-loader')
+        .loader('ts-loader')
+        .options(tsConfigOptions)
+        .end()
 
       const tsxConfigOptions = config.module.rule('ts').uses.get('ts-loader').get('options');
       tsxConfigOptions.configFile = path.resolve(api.resolve('src'), 'tsconfig.json');
 
       config.module
         .rule('tsx')
-          .test(/\.tsx$/)
-          .use('ts-loader')
-            .loader('ts-loader')
-            .options(tsxConfigOptions)
-            .end()
+        .test(/\.tsx$/)
+        .use('ts-loader')
+        .loader('ts-loader')
+        .options(tsxConfigOptions)
+        .end()
 
       // Next section is weird as we have to copy the plugin's config, edit the copy
       // delete the plugin and then add the plugin back in with the saved config.

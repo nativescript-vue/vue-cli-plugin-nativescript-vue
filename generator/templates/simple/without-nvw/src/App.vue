@@ -1,5 +1,6 @@
 <%_ if (!rootOptions.router) { _%>
-<template>
+  <%_ if (!usingNVW) { _%>
+<template>  
   <div class="w-page">
     <div class="w-container">
       <img src="~/assets/logo.png" alt="logo" height="20%" width="20%">
@@ -7,9 +8,24 @@
     </div>
   </div>
 </template>
-<%_ } else { _%>
+  <%_ } else { _%>
+  <%# Using NVW %>
 <template>
-    <div class="w-page">
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+        <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+        <Image src="~/assets/logo.png" row="0" class="m-20"/> 
+        <HelloWorld :msg="msg" row="1" />
+    </GridLayout>
+    </Page>
+</template>
+  <%_ } _%>
+<%_ } else { _%>
+  <%# Using vue-router %>
+  <%_ if (!usingNVW) { _%>
+<template>
+  <div class="w-page">
     <nav>
       <ul class="w-navbar">
           <li class="w-title" :text="navbarTitle">{{navbarTitle}}</li>
@@ -22,9 +38,23 @@
     </div>
   </div>
 </template>
+  <%_ } else { _%>
+  <%# Using NVW %>
+<template>
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+        <Button text="Home" @tap="goToHomePage" row="0"/>
+        <Button text="About" @tap="goToAboutPage" row="1"/>
+    </GridLayout>
+    <router-view />
+  </Page>
+</template>
+  <%_ } _%>
 <%_ } _%>
-
-<%_ if (!rootOptions.router && !usingTS) { _%>
+<%_ if (!rootOptions.router) { _%>
+  <%_ if (!usingTS) { _%>
+    <%_ if (!usingNVW) { _%>
 <script>
   import HelloWorld from 'components/HelloWorld';
 
@@ -40,8 +70,36 @@
     },
   };
 
-</script>AboutNativeVue
-<%_ } else if (!rootOptions.router && usingTS){ _%>
+</script>    
+    <%_ } else { _%>
+    <%# Using NVW %>
+<script>
+  import { Page, GridLayout, Img } from 'nativescript-vue-web';
+  import HelloWorld from '~/components/HelloWorld.vue';
+
+  export default {
+    name: 'home',
+    components: {
+      HelloWorld,
+      Page,
+      // ActionBar,
+      GridLayout,
+      // eslint-disable-next-line
+      Img,
+    },
+    data() {
+      return {
+        navbarTitle: 'Home.vue',
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
+      };
+    },
+  };
+
+</script>
+    <%_ } _%>
+  <%_ } else { _%>
+  <%# Using TS %>
+    <%_ if (!usingNVW) { _%>
 <script lang="ts">
   import HelloWorld from 'components/HelloWorld.vue';
 
@@ -58,7 +116,29 @@
   };
 
 </script>
-<%_ } else if (rootOptions.router && !usingTS){ _%>
+    <%_ } else { _%>
+    <%# Is using NVW %>
+<script lang="ts">
+  import HelloWorld from 'components/HelloWorld.vue';
+
+  export default {
+    name: 'home',
+    components: {
+      HelloWorld,
+    },
+    data() {
+      return {
+        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
+      };
+    },
+  };
+
+</script>
+    <%_ } _%>  
+  <%_ } _%>
+<%_ } else { _%>
+  <%_ if (!usingTS) { _%>
+    <%_ if (!usingNVW) { _%>
 <script>
 
   export default {
@@ -71,7 +151,38 @@
   };
 
 </script>
-<%_ } else if (rootOptions.router && usingTS){ _%>
+    <%_ } else { _%>
+<script>
+  import { Page, ActionBar, GridLayout, Button } from 'nativescript-vue-web';
+  
+  export default {
+
+    components: {
+      Page,
+      ActionBar,
+      GridLayout,
+      // eslint-disable-next-line
+      Button,
+    },
+    data() {
+      return {
+        navbarTitle: 'App.vue',
+      };
+    },
+    methods: {
+      goToHomePage() {
+        this.$router.push('home');
+      },
+      goToAboutPage() {
+        this.$router.push('about');
+      },
+    },
+  };
+</script>
+    <%_ } _%>
+  <%_ } else { _%>
+    <%# Using TS %>
+    <%_ if (!usingNVW) { _%>
 <script lang="ts">
 
   export default {
@@ -84,7 +195,37 @@
   };
 
 </script>
-<%_ } else { _%>
+    <%_ } else { _%>
+    <%# Is using NVW %>
+<script lang="ts">
+  import { Page, ActionBar, GridLayout, Button } from 'nativescript-vue-web';
+  
+  export default {
+
+    components: {
+      Page,
+      ActionBar,
+      GridLayout,
+      // eslint-disable-next-line
+      Button,
+    },
+    data() {
+      return {
+        navbarTitle: 'App.vue',
+      };
+    },
+    methods: {
+      goToHomePage() {
+        (this as any).$router.push('home');
+      },
+      goToAboutPage() {
+        (this as any).$router.push('about');
+      },
+    },
+  };
+</script>
+    <%_ } _%>
+  <%_ } _%>
 <%_ } _%>
 
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>

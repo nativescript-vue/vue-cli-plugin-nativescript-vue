@@ -1,5 +1,4 @@
-module.exports = [
-  {
+module.exports = [{
     name: 'applicationId',
     type: 'input',
     message: 'Enter a unique application identifier:',
@@ -35,8 +34,7 @@ Example: com.company.app`
     name: 'isNativeOnly',
     type: 'list',
     message: 'Do you want a dual Native and Web setup or a Native only setup?',
-    choices: [
-      {
+    choices: [{
         name: 'Dual Native and Web setup',
         value: 'dual'
       },
@@ -57,8 +55,7 @@ Example: com.company.app`
     name: 'templateType',
     type: 'list',
     message: 'What type of template do you want to start with? (Default: Simple)',
-    choices: [
-      {
+    choices: [{
         name: 'Simple',
         value: 'simple'
       },
@@ -69,6 +66,6 @@ Example: com.company.app`
       }
     ],
     default: 'simple'
-  } 
+  }
 
 ]
