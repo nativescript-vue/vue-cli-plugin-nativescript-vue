@@ -27,7 +27,6 @@
 </template>
   <%_ } _%>
 <%_ } _%>
-
 <%_ if (!rootOptions.router) { _%>
   <%_ if (!usingTS) { _%>
     <%_ if (!usingNVW) { _%>

@@ -30,7 +30,6 @@
 </template>
   <%_ } _%>
 <%_ } _%>
-
 <%_ if (!rootOptions.router) { _%>
   <%_ if (!usingTS) { _%>
     <%_ if (!usingNVW) { _%>
@@ -140,9 +139,6 @@
     <%_ } _%>
   <%_ } _%>
 <%_ } _%>
-
-
-
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
 <style scoped<%-
@@ -152,17 +148,39 @@
           ? 'scss'
           : rootOptions.cssPreprocessor
       }"`
-    : ``
-%>>
+    : `` %>>
+  <%_ if (!usingNVW) { _%>
   img {
     height: 20%;
     width: 20%;
+    display: block;
+    margin: auto;
+    margin-top: 4em;
   }
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  img {
+    display: block;
+    margin: auto;
+    margin-top: 4em;
+  }
+  <%_ } _%>
 </style>
 <%_ } else { _%>
 <style scoped lang="stylus">
+  <%_ if (!usingNVW) { _%>
   img
     height 20%
     width 20%
+    display: block;
+    margin: auto;
+    margin-top: 4em;
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  img
+    display: block;
+    margin: auto;
+    margin-top: 4em;
+  <%_ } _%>
 </style>
 <%_ } _%>

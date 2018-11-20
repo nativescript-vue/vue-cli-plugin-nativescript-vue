@@ -31,7 +31,7 @@ module.exports = (api, projectOptions) => {
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
   process.env.VUE_APP_MODE = appMode;
 
-  projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'platforms/web' : nsWebpack.getAppPath(platform, api.service.context));
+  projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, api.service.context));
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, appMode, jsOrTs) : nativeConfig(api, projectOptions, env, platform, jsOrTs);
 
@@ -567,7 +567,17 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
       }, config.module.rule('vue').uses.get('vue-loader').get('options')))
       .end()
 
+    const imageLoaderOptions = config.module.rule('images').uses.get('url-loader').get('options');
+    imageLoaderOptions.fallback.options.name = 'assets/[name].[ext]';
+    config.module.rules.delete('images')
 
+    config.module
+    .rule('images')
+    .test(/\.(png|jpe?g|gif|webp)(\?.*)?$/)
+    .use('url-loader')
+    .loader('url-loader')
+    .options(imageLoaderOptions)
+    .end()
 
     // Define useful constants like TNS_WEBPACK
     config.plugin('define')
@@ -585,6 +595,48 @@ const webConfig = (api, projectOptions, env, appMode, jsOrTs) => {
       .use(CleanWebpackPlugin, [path.join(projectOptions.outputDir, '/**/*'), {
         root: projectOptions.outputDir
       }])
+      .end();
+
+
+    // Copy assets to out dir. Add your own globs as needed.
+    // if the project is native-only then we want to copy files 
+    // from the app directory and not the src directory as at
+    // that point, the src directory should have been removed 
+    // when the plugin was originally invoked.
+    config.plugin('copy-assets')
+      .use(CopyWebpackPlugin, [
+        [{
+            from: {
+              glob: path.resolve(api.resolve('src'), 'fonts/**')
+            },
+            to: path.join(projectOptions.outputDir, 'fonts/'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(api.resolve('src'), '**/*.jpg')
+            },
+            to: path.join(projectOptions.outputDir, 'assets'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(api.resolve('src'), '**/*.png')
+            },
+            to: path.join(projectOptions.outputDir, 'assets/'),
+            flatten: true
+          },
+          {
+            from: {
+              glob: path.resolve(api.resolve('src'), 'assets/**/*')
+            },
+            to: path.join(projectOptions.outputDir, 'assets/'),
+            flatten: true
+          },
+        ], {
+          //ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]
+        }
+      ])
       .end();
 
     // only adjust ts-loaders when we're using typescript in the project

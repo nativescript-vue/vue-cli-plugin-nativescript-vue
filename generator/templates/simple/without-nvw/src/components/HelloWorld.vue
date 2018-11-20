@@ -15,8 +15,6 @@
 </template>
 <%_ } else { _%>
 <%_ } _%>
-
-
 <%_ if (!usingTS) { _%>
   <%_ if (!usingNVW) { _%>
 <script>
@@ -78,7 +76,6 @@
 </script>
   <%_ } _%>  
 <%_ } _%>
-
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
 <style scoped<%-
@@ -98,6 +95,7 @@
     text-align: center;
   }
 
+  <%_ if (!usingNVW) { _%>
   img {
     height: 20%;
     width: 20%;
@@ -105,6 +103,14 @@
     margin: auto;
     margin-top: 4em;
   }
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  img {
+    display: block;
+    margin: auto;
+    margin-top: 4em;
+  }
+  <%_ } _%>
 </style>
 <%_ } else { _%>
 <style scoped lang="stylus">
@@ -114,12 +120,18 @@
     margin auto 
     margin-top 4em
     text-align center
-
+<%_ if (!usingNVW) { _%>
   .img
     height 20%
     width 20%
     display block
     margin auto
     margin-top 4em
-</style>
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  .img
+    display block
+    margin auto
+    margin-top 4em
+  <%_ } _%></style>
 <%_ } _%>
