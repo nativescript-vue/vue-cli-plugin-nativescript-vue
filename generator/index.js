@@ -37,36 +37,6 @@ module.exports = async (api, options, rootOptions) => {
   const templateTypePathModifer = options.templateType;
 
 
-  // // // const srcfiles = [
-  // // //   'router.js',
-  // // //   'main.js',
-  // // //   api.hasPlugin('typescript') ? 'tsconfig.json' : '',
-  // // //   'App.vue',
-  // // //   'views/About.vue',
-  // // //   'views/Home.vue',
-  // // //   'components/HelloWorld.vue',
-  // // //   'assets/logo.png'
-  // // // ]
-
-  // // // const appfiles = [
-  // // //   'package.json',
-  // // //   'main.js',
-  // // //   api.hasPlugin('typescript') ? 'tsconfig.json' : '',
-  // // //   'App.native.vue',
-  // // //   'App.ios.vue',
-  // // //   'App.android.vue',
-  // // //   'views/About.native.vue',
-  // // //   'views/About.ios.vue',
-  // // //   'views/About.android.vue',
-  // // //   'views/Home.native.vue',
-  // // //   'views/Home.ios.vue',
-  // // //   'views/Home.android.vue',
-  // // //   'components/HelloWorld.native.vue',
-  // // //   'components/HelloWorld.ios.vue',
-  // // //   'components/HelloWorld.android.vue',
-  // // // ]
-
-
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
   if (options.isNativeOnly === 'native' && options.isNVW) {
     throw Error('Invalid options chosen.  You cannot have a Native only project and use Nativescript-Vue-Web')

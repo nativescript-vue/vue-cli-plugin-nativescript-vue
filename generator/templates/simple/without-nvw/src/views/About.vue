@@ -44,7 +44,7 @@
       // ActionBar,
       GridLayout,
       // eslint-disable-next-line
-      Label
+      Label,
     },
     data() {
       return {
@@ -71,7 +71,7 @@
       // ActionBar,
       GridLayout,
       // eslint-disable-next-line
-      Label
+      Label,
     },
     data() {
       return {

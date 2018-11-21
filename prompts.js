@@ -33,13 +33,13 @@ Example: com.company.app`
   {
     name: 'isNativeOnly',
     type: 'list',
-    message: 'Do you want a dual Native and Web setup or a Native only setup?',
+    message: 'Dual Native AND Web development experience or a Native only? (Default: Dual)',
     choices: [{
-        name: 'Dual Native and Web setup',
+        name: 'Dual Native AND Web',
         value: 'dual'
       },
       {
-        name: 'Native only setup',
+        name: 'Native only',
         value: 'native'
       }
     ],
@@ -47,9 +47,23 @@ Example: com.company.app`
   },
   {
     name: 'isNVW',
-    type: 'confirm',
-    message: 'Do you want to develop dual-use Web & Native components via Nativescript-Vue-Web? (Default: No)',
-    default: false
+    type: 'list',
+    message: 'Use Nativescript-Vue-Web to develop web components with Nativescript-Vue like syntax? (Default: No)',
+    choices: [
+      {
+        name: 'I\'ll bring my own web component framework',
+        value: false
+      },
+      {
+      name: 'Use Nativescript-Vue-Web component framework',
+      value: true
+      }
+    ],
+    default: false,
+    when: (answers) => {
+      // prompt will only show up if isNativeOnly === 'dual'
+      return answers.isNativeOnly === 'dual';
+    }
   },
   {
     name: 'templateType',

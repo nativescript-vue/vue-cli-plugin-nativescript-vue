@@ -238,7 +238,8 @@
       }"`
     : ``
 %>>
-  .w-navbar {
+  <%_ if (!usingNVW) { _%>
+ .w-navbar {
     color: #42b983;
   }
 
@@ -297,10 +298,16 @@
     }
     
   }
-
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  ActionBar {
+    color: #42b983;
+  }
+  <%_ } _%>
 </style>
 <%_ } else { _%>
 <style lang="stylus">
+  <%_ if (!usingNVW) { _%>
   .w-navbar
     color: #42b983
   .w-page
@@ -345,5 +352,10 @@
       border-width: 0px
       font-weight: 600
       border-radius: 3px
+  <%_ } else { _%>
+  <%# Is using NVW %>
+  ActionBar 
+    color #42b983
+  <%_ } _%>
 </style>
 <%_ } _%>
