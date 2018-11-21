@@ -23,19 +23,8 @@ module.exports = async (api, options, rootOptions) => {
   // to simply change the file's extension
   const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
 
-  // These next two variables make it possible to match the template directory structure
-  // with the answers to their corrosponding prompts and have the plugin automatically
-  // know which paths to take to get the correct template.  If we add template Types in the
-  // future, hopefully no other work will need done to modify the plugin to accomdate 
-  // the pathing to the template directories.
-  //
-  // For example.  A template type of 'simple' and a non NativeScript-Vue-Web project will
-  // have a template path that equals: ./templates/simple/without-nvw
-  // If it's a template type of 'simple' but is a NativeScript-Vue-Web project then it will
-  // have a template path that equals: ./templates/simple/with-nvw
-  const templateNVWPathModifier = options.isNVW === true ? 'without-nvw' : 'without-nvw'
+  // A template type of 'simple' project will have a template path that equals: ./templates/simple
   const templateTypePathModifer = options.templateType;
-
 
   // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
   if (options.isNativeOnly === 'native' && options.isNVW) {
@@ -191,10 +180,10 @@ module.exports = async (api, options, rootOptions) => {
     if (options.isNativeOnly === 'dual') {
       api.render(async () => {
         // render src directory
-        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'src'), dirPathPrefix + 'src');
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, 'src'), dirPathPrefix + 'src');
 
         // render app directory
-        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'app'), dirPathPrefix + 'app');
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, 'app'), dirPathPrefix + 'app');
 
         // add router statements to src/main.*s
         await vueRouterSetup(api, dirPathPrefix, jsOrTs);
@@ -206,33 +195,13 @@ module.exports = async (api, options, rootOptions) => {
     } else { // Is Native Only
       api.render(async () => {
         // render app directory
-        //await renderFilesIndividually(api, jsOrTs, appfiles, commonRenderOptions, './templates/simple/without-nvw/app', dirPathPrefix + 'app');
-        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'app'), dirPathPrefix + 'app');
+        await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, 'app'), dirPathPrefix + 'app');
 
         // add vuex statements to app/main.*s
         await vuexSetup(api, options, dirPathPrefix, jsOrTs);
 
       })
     }
-
-  // } else { // once we integrate NativeScript-Vue-Web, we'll put options here
-
-  //   // render src directory
-  //   await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'src'), dirPathPrefix + 'src');
-
-  //   // render app directory
-  //   await renderDirectory(api, jsOrTs, commonRenderOptions, path.join('templates', templateTypePathModifer, templateNVWPathModifier, 'app'), dirPathPrefix + 'app');
-
-  //   // add router statements to src/main.*s
-  //   await vueRouterSetup(api, dirPathPrefix, jsOrTs);
-
-  //   // add vuex statements to app/main.*s
-  //   await vuexSetup(api, options, dirPathPrefix, jsOrTs);
-  
-
-  // }
-
-
 
   api.onCreateComplete(() => {
 

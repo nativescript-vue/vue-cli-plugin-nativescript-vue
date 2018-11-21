@@ -489,32 +489,6 @@ const nativeConfig = (api, projectOptions, env, platform, jsOrTs) => {
         .use(ForkTsCheckerWebpackPlugin, [forTSPluginConfig])
         .end();
     }
-
-    // // // // causes error on compile at the moment
-    // // // config.plugin('extract-css').tap(args => {
-    // // //   if (!args.length) return args;
-
-    // // //   args[0].filename = 'app.css'
-    // // //   args[0].chunkFilename = 'vendor.css'
-
-    // // //   return args;
-    // // // })
-
-    // // // // causes error on compile at the moment
-    // // // const nodeModulesPath = api.resolve('node_modules')
-    // // // config.externals((context, request, callback) => {
-    // // //   if (context.startsWith(nodeModulesPath)) {
-    // // //     const module = context.replace(nodeModulesPath, '').split(path.sep).find(p => !!p)
-    // // //     try {
-    // // //       const pkg = require(path.resolve(nodeModulesPath, module, 'package.json'))
-    // // //       if(pkg.nativescript) {
-    // // //         return callback(null, 'commonjs ' + request)
-    // // //       }
-    // // //     } catch (e) {
-    // // //     }
-    // // //   }
-    // // //   callback()
-    // // // })
   })
 
 
