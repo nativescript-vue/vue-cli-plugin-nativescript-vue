@@ -1,12 +1,11 @@
-// /* eslint-disable no-console */
+/* eslint-disable no-console */
 /* eslint-disable import/no-extraneous-dependencies */
-const path = require('path');
+const { relative, resolve, sep, join } = require('path');
 const fs = require('fs-extra');
 
 const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-// // // const TerserPlugin = require('terser-webpack-plugin');
 const DefinePlugin = require('webpack/lib/DefinePlugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
@@ -70,13 +69,13 @@ module.exports = (api, projectOptions) => {
 	const appResourcesPlatformDir = platform === 'android' ? 'Android' : 'iOS';
 	const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
 	const projectRoot = api.service.context;
-	const isNVW = fs.pathExistsSync(path.resolve(projectRoot, 'src', 'main.native' + jsOrTs));
-	const appPath = isNVW === true ? api.resolve('src') : api.resolve('app');
-	const appResourcesPath = path.join(appPath, 'App_Resources');
+	const isNVW = fs.pathExistsSync(resolve(projectRoot, 'src', 'main.native' + jsOrTs));
+	const appPath = isNVW === true ? resolve(projectRoot, 'src') : resolve(projectRoot, 'app');
+	const appResourcesPath = join(appPath, 'App_Resources');
 
 	process.env.VUE_APP_MODE = appMode;
 
-	projectOptions.outputDir = path.join(api.service.context, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, api.service.context));
+	projectOptions.outputDir = join(projectRoot, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, projectRoot));
 
 	return appMode === 'web'
 		? webConfig(api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, appResourcesPath, appResourcesPlatformDir, isNVW, appMode)
@@ -93,6 +92,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 
 	const appComponents = ['tns-core-modules/ui/frame', 'tns-core-modules/ui/frame/activity'];
 
+	// // // const platform = env && (env.android && "android" || env.ios && "ios");
 	if (!platform) {
 		throw new Error('You need to provide a target platform!');
 	}
@@ -102,8 +102,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 	// Default destination inside platforms/<platform>/...
 	const dist = projectOptions.outputDir;
 
-	const tnsCorePath = api.resolve('node_modules/tns-core-modules');
-	const isNativeOnly = !fs.pathExistsSync(path.resolve(projectRoot, 'src'));
+	const isNativeOnly = !fs.pathExistsSync(resolve(projectRoot, 'src'));
 	const tsconfigFileName = isNVW === true ? 'tsconfig.web.json' : 'tsconfig.native.json';
 
 	// const {
@@ -112,7 +111,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 	// 	// when bundling with `tns run android|ios --bundle`.
 	// 	// appPath = isNVW === true ? api.resolve('src') : api.resolve('app'); //// api.resolve('app'),
 	// // // // console.log('appPath - ', appPath);
-	// 	// appResourcesPath = path.join(appPath, 'App_Resources');
+	// 	// appResourcesPath = join(appPath, 'App_Resources');
 	// // // // console.log('appResourcesPath - ', appResourcesPath);
 
 	// 	// You can provide the following flags when running 'tns run android|ios'
@@ -137,11 +136,11 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 	const appResourcesFullPath = appResourcesPath;
 	// // // // console.log('appResourcesFullPath - ', appResourcesFullPath);
 
-	console.log(path.resolve(isNativeOnly === true ? appFullPath : api.resolve('src')));
+	// // // // console.log(resolve(isNativeOnly === true ? appFullPath : api.resolve('src')));
 
 	const entryModule = nsWebpack.getEntryModule(appFullPath);
 	// // // // console.log('entryModule - ', entryModule);
-	const entryPath = `.${path.sep}${entryModule}`;
+	const entryPath = `.${sep}${entryModule}`;
 	// // // // console.log('entryPath - ', entryPath);
 
 	console.log(`Bundling application for entryPath ${entryPath}...`);
@@ -198,32 +197,31 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 				resolveExtensions(config, ext);
 			}
 		}
+		config.resolve.modules.delete('node_modules');
+		config.resolve.modules.delete(resolve(projectRoot, 'node_modules'));
 
 		config.resolve.modules // Resolve {N} system modules from tns-core-modules
-			.add(path.resolve(api.service.context, tnsCorePath))
-			// .add(path.resolve(api.service.context, 'node_modules'))
-			.add(tnsCorePath)
+			.add(resolve(projectRoot, 'node_modules/tns-core-modules'))
+			.add(resolve(projectRoot, 'node_modules'))
 			.add('node_modules/tns-core-modules')
 			.add('node_modules')
 			.end()
 			.alias.delete('vue$')
 			.delete('@')
-			.set('@', appFullPath)
 			.set('~', appFullPath)
+			.set('@', appFullPath)
 			.set('src', api.resolve('src'))
-			.set('assets', path.resolve(api.resolve('src'), 'assets'))
-			.set('components', path.resolve(api.resolve('src'), 'components'))
-			.set('fonts', path.resolve(api.resolve('src'), 'fonts'))
+			.set('assets', resolve(api.resolve('src'), 'assets'))
+			.set('components', resolve(api.resolve('src'), 'components'))
+			.set('fonts', resolve(api.resolve('src'), 'fonts'))
 			.set('root', projectRoot)
 			.set('vue$', 'nativescript-vue')
 			.end()
-			.symlinks(false) // don't resolve symlinks to symlinked modules
+			.symlinks(true) // don't resolve symlinks to symlinked modules
 			.end();
 
 		config.resolveLoader
 			.symlinks(false) //  don't resolve symlinks to symlinked modules
-			.modules.add(tnsCorePath)
-			.end()
 			.end();
 
 		config.node
@@ -266,9 +264,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 							// when these options are enabled
 							collapse_vars: platform !== 'android',
 							sequences: platform !== 'android'
-						} // // // ,
-						// // //safari10: platform === 'ios',
-						// // //keep_fnames: true
+						}
 					}
 				})
 			])
@@ -341,8 +337,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 				.uses.get('ts-loader')
 				.get('options');
 
-			tsConfigOptions.configFile = path.resolve(projectRoot, tsconfigFileName);
-			// tsConfigOptions.happyPackMode = false;
+			tsConfigOptions.configFile = resolve(projectRoot, tsconfigFileName);
 
 			config.module
 				.rule('ts')
@@ -361,8 +356,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 				.uses.get('ts-loader')
 				.get('options');
 
-			tsxConfigOptions.configFile = path.resolve(projectRoot, tsconfigFileName);
-			// tsxConfigOptions.happyPackMode = false;
+			tsxConfigOptions.configFile = resolve(projectRoot, tsconfigFileName);
 
 			config.module
 				.rule('tsx')
@@ -545,7 +539,6 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 		config.module.rules.delete('fonts');
 		config.module.rules.delete('pug');
 		config.module.rules.delete('postcss');
-		// // config.module.rules.delete('sass');
 		config.module.rules.delete('less');
 		config.module.rules.delete('stylus');
 		config.module.rules.delete('eslint').end();
@@ -557,11 +550,9 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 		config.plugins.delete('prefetch');
 		config.plugins.delete('pwa');
 		config.plugins.delete('progress');
-
 		config.plugins.delete('case-sensitive-paths');
 		config.plugins.delete('friendly-errors');
 		config.plugins.delete('no-emit-on-errors');
-
 		config.plugins.delete('copy').end();
 
 		if (mode === 'production') {
@@ -590,7 +581,7 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 		config
 			.plugin('clean')
 			.use(CleanWebpackPlugin, [
-				path.join(dist, '/**/*'),
+				join(dist, '/**/*'),
 				{
 					root: dist
 				}
@@ -603,9 +594,6 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 			.use(CopyWebpackPlugin, [
 				[
 					{
-						// from: path.join(appResourcesFullPath, appResourcesPlatformDir),
-						// to: path.join(dist, 'App_Resources', appResourcesPlatformDir),
-						// context: projectRoot
 						from: `${appResourcesFullPath}/${appResourcesPlatformDir}`,
 						to: `${dist}/App_Resources/${appResourcesPlatformDir}`,
 						context: projectRoot
@@ -627,27 +615,27 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 						from: {
 							glob: 'fonts/**'
 						},
-						to: path.join(dist, 'fonts/'),
+						to: join(dist, 'fonts/'),
 						flatten: true
 					},
 					{
 						from: {
 							glob: '**/*.+(jpg|png)'
 						},
-						to: path.join(dist, 'assets/'),
+						to: join(dist, 'assets/'),
 						flatten: true
 					},
 					{
 						from: {
 							glob: 'assets/**/*'
 						},
-						to: path.join(dist, 'assets/'),
+						to: join(dist, 'assets/'),
 						flatten: true
 					}
 				],
 				{
-					context: path.resolve(isNativeOnly === true ? appFullPath : api.resolve('src')),
-					ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]
+					context: resolve(isNativeOnly === true ? appFullPath : api.resolve('src')),
+					ignore: [`${relative(appPath, appResourcesFullPath)}/**`]
 				}
 			])
 			.end();
@@ -681,41 +669,41 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 			.use(WatchStateLoggerPlugin, [])
 			.end();
 
-		// config.when(report, (config) => {
-		// 	config
-		// 		.plugin('bundle-analyzer')
-		// 		.use(BundleAnalyzerPlugin, [
-		// 			{
-		// 				analyzerMode: 'static',
-		// 				openAnalyzer: false,
-		// 				generateStatsFile: true,
-		// 				reportFilename: path.resolve(projectRoot, 'report', `report.html`),
-		// 				statsFilename: path.resolve(projectRoot, 'report', `stats.json`)
-		// 			}
-		// 		])
-		// 		.end();
-		// });
+		// 	// config.when(report, (config) => {
+		// 	// 	config
+		// 	// 		.plugin('bundle-analyzer')
+		// 	// 		.use(BundleAnalyzerPlugin, [
+		// 	// 			{
+		// 	// 				analyzerMode: 'static',
+		// 	// 				openAnalyzer: false,
+		// 	// 				generateStatsFile: true,
+		// 	// 				reportFilename: resolve(projectRoot, 'report', `report.html`),
+		// 	// 				statsFilename: resolve(projectRoot, 'report', `stats.json`)
+		// 	// 			}
+		// 	// 		])
+		// 	// 		.end();
+		// 	// });
 
-		// config.when(snapshot, (config) => {
-		// 	config
-		// 		.plugin('snapshot')
-		// 		.use(nsWebpack.NativeScriptSnapshotPlugin, [
-		// 			{
-		// 				chunk: 'vendor',
-		// 				requireModules: ['tns-core-modules/bundle-entry-points'],
-		// 				projectRoot,
-		// 				webpackConfig: config
-		// 			}
-		// 		])
-		// 		.end();
-		// });
+		// 	// config.when(snapshot, (config) => {
+		// 	// 	config
+		// 	// 		.plugin('snapshot')
+		// 	// 		.use(nsWebpack.NativeScriptSnapshotPlugin, [
+		// 	// 			{
+		// 	// 				chunk: 'vendor',
+		// 	// 				requireModules: ['tns-core-modules/bundle-entry-points'],
+		// 	// 				projectRoot,
+		// 	// 				webpackConfig: config
+		// 	// 			}
+		// 	// 		])
+		// 	// 		.end();
+		// 	// });
 
-		// config.when(hmr, (config) => {
-		// 	config
-		// 		.plugin('hmr')
-		// 		.use(webpack.HotModuleReplacementPlugin(), [])
-		// 		.end();
-		// });
+		// 	// config.when(hmr, (config) => {
+		// 	// 	config
+		// 	// 		.plugin('hmr')
+		// 	// 		.use(webpack.HotModuleReplacementPlugin(), [])
+		// 	// 		.end();
+		// 	// });
 
 		// Another only do this if we're using typescript.  this code could have been put
 		// with the ts-loader section but left it here near the rest of the plugin config
@@ -726,8 +714,8 @@ const nativeConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath
 			// directly to edit it.
 			const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-			forTSPluginConfig.tsconfig = path.resolve(projectRoot, tsconfigFileName); // // path.resolve(appFullPath, 'tsconfig.json');
-			forTSPluginConfig.tslint = path.resolve(projectRoot, 'tslint.json');
+			forTSPluginConfig.tsconfig = resolve(projectRoot, tsconfigFileName); // // resolve(appFullPath, 'tsconfig.json');
+			forTSPluginConfig.tslint = resolve(projectRoot, 'tslint.json');
 			forTSPluginConfig.checkSyntacticErrors = false;
 
 			// console.log('forTSPluginConfig - ', forTSPluginConfig)
@@ -749,7 +737,7 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 
 	api.chainWebpack((config) => {
 		config.entry('app').clear();
-		config.entry('app').add(path.resolve(api.resolve('src'), 'main' + jsOrTs));
+		config.entry('app').add(resolve(api.resolve('src'), 'main' + jsOrTs));
 
 		config.output.path(dist).end();
 
@@ -758,9 +746,9 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 			.set('@', api.resolve('src'))
 			.set('~', api.resolve('src'))
 			.set('src', api.resolve('src'))
-			.set('assets', path.resolve(api.resolve('src'), 'assets'))
-			.set('components', path.resolve(api.resolve('src'), 'components'))
-			.set('fonts', path.resolve(api.resolve('src'), 'fonts'))
+			.set('assets', resolve(api.resolve('src'), 'assets'))
+			.set('components', resolve(api.resolve('src'), 'components'))
+			.set('fonts', resolve(api.resolve('src'), 'fonts'))
 			.set('root', projectRoot)
 			.end();
 
@@ -831,7 +819,7 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 		config
 			.plugin('clean')
 			.use(CleanWebpackPlugin, [
-				path.join(dist, '/**/*'),
+				join(dist, '/**/*'),
 				{
 					root: dist
 				}
@@ -845,66 +833,33 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 		// when the plugin was originally invoked.
 		config
 			.plugin('copy-assets')
-			// .use(CopyWebpackPlugin, [
-			// 	[
-			// 		{
-			// 			from: {
-			// 				glob: path.resolve(api.resolve('src'), 'fonts/**')
-			// 			},
-			// 			to: path.join(dist, 'fonts/'),
-			// 			flatten: true
-			// 		},
-			// 		{
-			// 			from: {
-			// 				glob: path.resolve(api.resolve('src'), '**/*.+(jpg|png)')
-			// 			},
-			// 			to: path.join(dist, 'assets'),
-			// 			flatten: true
-			// 		},
-			// 		{
-			// 			from: {
-			// 				glob: path.resolve(api.resolve('src'), 'assets/**/*')
-			// 			},
-			// 			to: path.join(dist, 'assets/'),
-			// 			flatten: true
-			// 		}
-			// 	],
-			// 	{
-			// 		//ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]
-			// 		ignore: [path.join(appResourcesFullPath, '/**/*')]
-			// 	}
-			// ])
-			// .end();
-
 			.use(CopyWebpackPlugin, [
 				[
 					{
 						from: {
 							glob: 'fonts/**'
 						},
-						to: path.join(dist, 'fonts/'),
+						to: join(dist, 'fonts/'),
 						flatten: true
 					},
 					{
 						from: {
 							glob: '**/*.+(jpg|png)'
 						},
-						to: path.join(dist, 'assets/'),
+						to: join(dist, 'assets/'),
 						flatten: true
 					},
 					{
 						from: {
 							glob: 'assets/**/*'
 						},
-						to: path.join(dist, 'assets/'),
+						to: join(dist, 'assets/'),
 						flatten: true
 					}
 				],
 				{
 					context: api.resolve('src'),
-					ignore: [path.join(appResourcesFullPath, '/**/*')]
-
-					// ignore: [`${path.relative(appPath, appResourcesFullPath)}/**`]
+					ignore: [join(appResourcesFullPath, '/**/*')]
 				}
 			])
 			.end();
@@ -916,7 +871,7 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 				.uses.get('ts-loader')
 				.get('options');
 
-			tsConfigOptions.configFile = path.resolve(projectRoot, 'tsconfig.web.json');
+			tsConfigOptions.configFile = resolve(projectRoot, 'tsconfig.web.json');
 
 			config.module
 				.rule('ts')
@@ -931,7 +886,7 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 				.uses.get('ts-loader')
 				.get('options');
 
-			tsxConfigOptions.configFile = path.resolve(projectRoot, 'tsconfig.web.json');
+			tsxConfigOptions.configFile = resolve(projectRoot, 'tsconfig.web.json');
 
 			config.module
 				.rule('tsx')
@@ -947,8 +902,8 @@ const webConfig = (api, projectOptions, nodeEnv, jsOrTs, projectRoot, appPath, a
 			// directly to edit it.
 			const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-			forTSPluginConfig.tsconfig = path.resolve(projectRoot, 'tsconfig.web.json');
-			forTSPluginConfig.tslint = path.resolve(projectRoot, 'tslint.json');
+			forTSPluginConfig.tsconfig = resolve(projectRoot, 'tsconfig.web.json');
+			forTSPluginConfig.tslint = resolve(projectRoot, 'tslint.json');
 
 			config.plugins.delete('fork-ts-checker').end();
 

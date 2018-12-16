@@ -28,7 +28,7 @@ Example: com.company.app`;
 	{
 		name: 'isNewProject',
 		type: 'confirm',
-		message: 'Is this a brand new project? (Default: No)',
+		message: 'Is this a brand new project? (Default: Yes)',
 		default: true
 	},
 	{
