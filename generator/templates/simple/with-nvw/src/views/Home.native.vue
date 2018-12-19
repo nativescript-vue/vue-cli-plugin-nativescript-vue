@@ -11,7 +11,7 @@
 <%_ if (!usingTS) { _%>
 <%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
-  import HelloWorld from '~/components/HelloWorld.ios';
+  import HelloWorld from 'components/HelloWorld';
 
   export default {
     name: 'home',
@@ -20,7 +20,7 @@
     },
     data() {
       return {
-        navbarTitle: 'Home.ios.vue',
+        navbarTitle: 'Home.native.vue',
         msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
       };
     }
@@ -30,7 +30,7 @@
 <%# -------------------- Is Using TypeScript  -------------------- -%>
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
-  import HelloWorld from '~/components/HelloWorld.ios.vue';
+  import HelloWorld from '~/components/HelloWorld.native.vue';
 
   @Component({
     name: 'home',
@@ -39,7 +39,6 @@
     },
   })
   export default class Home extends Vue {
-    private navbarTitle: string = 'Home.ios.vue';
     private msg: string = 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM;
   }
 

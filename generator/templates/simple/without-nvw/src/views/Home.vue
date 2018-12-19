@@ -1,155 +1,58 @@
-
-<%_ if (!rootOptions.router) { _%>
-  <%_ if (!usingNVW) { _%>
-<template>
-</template>
-  <%_ } else { _%>
-<template>
-</template>
-  <%_ } _%>
-<%_ } else { _%>
-  <%_ if (!usingNVW) { _%>
 <template>
   <div class="w-page">
     <div class="w-container">
       <img src="~/assets/logo.png" alt="logo">
-      <HelloWorld :msg="msg" />
+      <HelloWorld :msg="msg"/>
     </div>
   </div>
 </template>
-  <%_ } else { _%>
-<template>
-  <Page>
-    <!-- <ActionBar :title="navbarTitle"/> -->
-    <GridLayout rows="auto, auto">
-        <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
-        <Img src="~/assets/logo.png" row="0" class="m-20"/> 
-        <HelloWorld :msg="msg" row="1" />
-    </GridLayout>
-    </Page>
-</template>
-  <%_ } _%>
-<%_ } _%>
-<%_ if (!rootOptions.router) { _%>
-  <%_ if (!usingTS) { _%>
-    <%_ if (!usingNVW) { _%>
+<%_ if (!usingTS) { _%>
+<%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
+  import HelloWorld from 'components/HelloWorld';
+
+  export default {
+    name: 'home',
+    components: {
+      HelloWorld
+    },
+    data() {
+      return {
+        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+      };
+    }
+  };
+
 </script>
-    <%_ } else { _%>
-<script>
-</script>
-    <%_ } _%>
-  <%_ } else { _%>
-    <%# Using TS %>
-    <%_ if (!usingNVW) { _%>
-<script lang="ts">
-</script>
-    <%_ } else { _%>
-    <%# Is using NVW %>
-<script lang="ts">
-</script>
-    <%_ } _%>  
-  <%_ } _%>
 <%_ } else { _%>
-  <%_ if (!usingTS) { _%>
-    <%_ if (!usingNVW) { _%>
-<script>
-  import HelloWorld from 'components/HelloWorld'
-
-  export default {
-    name: 'home',
-    components: {
-      HelloWorld,
-    },
-    data() {
-      return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      };
-    },
-  };
-
-</script>
-    <%_ } else { _%>
-<script>
-  import { Page, GridLayout, Img } from 'nativescript-vue-web';
-  import HelloWorld from '~/components/HelloWorld.vue';
-
-  export default {
-    name: 'home',
-    components: {
-      HelloWorld,
-      Page,
-      // ActionBar,
-      GridLayout,
-      // eslint-disable-next-line
-      Img,
-    },
-    data() {
-      return {
-        navbarTitle: 'Home.vue',
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      };
-    },
-  };
-</script>
-    <%_ } _%>
-  <%_ } else { _%>
-    <%# Using TS %>
-    <%_ if (!usingNVW) { _%>
+<%# -------------------- Is Using TypeScript  -------------------- -%>
 <script lang="ts">
+  import { Component, Vue } from 'vue-property-decorator';
   import HelloWorld from 'components/HelloWorld.vue';
 
-  export default {
+  @Component({
     name: 'home',
     components: {
       HelloWorld,
     },
-    data() {
-      return {
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      };
-    },
-  };
+  })
+  export default class Home extends Vue {
+    private msg: string = 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM;
+  }
 
 </script>
-    <%_ } else { _%>
-    <%# Is using NVW %>
-<script lang="ts">
-  import { Page, GridLayout, Img } from 'nativescript-vue-web';
-  import HelloWorld from 'components/HelloWorld.vue';
-
-  export default {
-    name: 'home',
-    components: {
-      HelloWorld,
-      Page,
-      // ActionBar,
-      GridLayout,
-      // eslint-disable-next-line
-      Img,
-    },
-    data() {
-      return {
-        navbarTitle: 'Home.vue',
-        msg: 'Mode=' + process.env.TNS_APP_MODE + ' and Platform=' + process.env.TNS_APP_PLATFORM,
-      };
-    },
-  };
-</script>
-    <%_ } _%>
-  <%_ } _%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
-<style scoped<%-
-  rootOptions.cssPreprocessor
-    ? ` lang="${
+<%# -------------------- IS Using scss OR sass -------------------- -%>
+<%- rootOptions.cssPreprocessor
+    ? `<style scoped lang="${
         rootOptions.cssPreprocessor === 'sass'
           ? 'scss'
           : rootOptions.cssPreprocessor
-      }"`
-    : `` %>>
-  <%_ if (!usingNVW) { _%>
+      }"` + `>`
+    : ``
+%>
   img {
     height: 20%;
     width: 20%;
@@ -157,30 +60,16 @@
     margin: auto;
     margin-top: 4em;
   }
-  <%_ } else { _%>
-  <%# Is using NVW %>
-  img {
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-  }
-  <%_ } _%>
 </style>
 <%_ } else { _%>
+<%# -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
-  <%_ if (!usingNVW) { _%>
+
   img
     height 20%
     width 20%
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-  <%_ } else { _%>
-  <%# Is using NVW %>
-  img
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-  <%_ } _%>
+    display block
+    margin auto
+    margin-top 4em
 </style>
 <%_ } _%>

@@ -1,14 +1,22 @@
 <template>
-  <div>
-    <div class="message">{{msg}}</div>
-    <img src="~/assets/logo.png" alt="logo">
-  </div>
+  <GridLayout rows="auto, auto">
+    <Label class="message" :text="msg" row="0" horizontalAlignment="center"/>
+    <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+    <Img src="~/assets/logo.png" row="1" class="m-40"/>
+  </GridLayout>
 </template>
 <%_ if (!usingTS) { _%>
 <%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
+  import { GridLayout, Label, Img } from 'nativescript-vue-web';
+
   export default {
     name: 'HelloWorld',
+    components: {
+      GridLayout,
+      Label,
+      Img,
+    },
     props: {
       msg: String
     }
@@ -18,13 +26,20 @@
 <%# -------------------- Is Using TypeScript  -------------------- -%>
 <script lang="ts">
   import { Component, Vue, Prop } from 'vue-property-decorator';
+  import { GridLayout, Label, Img } from 'nativescript-vue-web';
 
   @Component({
-    name: 'HelloWorld'
+    name: 'HelloWorld',
+    components: {
+      GridLayout,
+      Label,
+      Img,
+    },
   })
   export default class HelloWorld extends Vue {
     @Prop(String) private msg!: string;
   }
+
 </script>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->

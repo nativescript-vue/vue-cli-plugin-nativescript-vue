@@ -1,27 +1,24 @@
 <template>
   <Page>
-    <ActionBar :title="navbarTitle"/>
-    <GridLayout rows="auto, auto">
-      <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
-      <Image src="~/assets/logo.png" row="0" class="m-20"/>
-      <HelloWorld :msg="msg" row="1"/>
+    <GridLayout>
+      <Label text="This is an about page" :textWrap="true" horizontalAlignment="center" verticalAlignment="center"/>
     </GridLayout>
   </Page>
 </template>
 <%_ if (!usingTS) { _%>
 <%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
-  import HelloWorld from '~/components/HelloWorld.ios';
+  import { Page, GridLayout, Label } from 'nativescript-vue-web';
 
   export default {
-    name: 'home',
     components: {
-      HelloWorld
+      Page,
+      GridLayout,
+      Label
     },
     data() {
       return {
-        navbarTitle: 'Home.ios.vue',
-        msg: 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM
+        navbarTitle: 'About.vue'
       };
     }
   };
@@ -30,17 +27,18 @@
 <%# -------------------- Is Using TypeScript  -------------------- -%>
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
-  import HelloWorld from '~/components/HelloWorld.ios.vue';
+  import { Page, GridLayout, Label } from 'nativescript-vue-web';
 
   @Component({
-    name: 'home',
+    name: 'about',
     components: {
-      HelloWorld,
+        Page,
+        GridLayout,
+        Label
     },
   })
-  export default class Home extends Vue {
-    private navbarTitle: string = 'Home.ios.vue';
-    private msg: string = 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM;
+  export default class About extends Vue {
+    private navbarTitle: string = 'About.vue';
   }
 
 </script>
@@ -56,16 +54,36 @@
       }"` + `>`
     : ``
 %>
-  Image {
-    height: 50%;
-    width: 50%;
+  .nvw-label {
+    height: 100%;
+    width: 100%;
+    padding-top: 3em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    align-items: center;
   }
 </style>
 <%_ } else { _%>
 <%# -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
-  Image
-    height 50%
-    width 50%
+  .nvw-label
+    height 100%
+    width 100%
+    padding-top 3em
+    position relative
+    overflow: hidden
+    display flex
+    flex-direction column
+    justify-content top
+    align-items center
+
 </style>
 <%_ } _%>
+
+
+
+
+

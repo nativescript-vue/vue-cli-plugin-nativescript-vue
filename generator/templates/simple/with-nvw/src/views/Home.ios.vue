@@ -11,7 +11,7 @@
 <%_ if (!usingTS) { _%>
 <%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
-  import HelloWorld from '~/components/HelloWorld.ios';
+  import HelloWorld from 'components/HelloWorld';
 
   export default {
     name: 'home',
@@ -39,7 +39,6 @@
     },
   })
   export default class Home extends Vue {
-    private navbarTitle: string = 'Home.ios.vue';
     private msg: string = 'Mode=' + TNS_APP_MODE + ' and Platform=' + TNS_APP_PLATFORM;
   }
 

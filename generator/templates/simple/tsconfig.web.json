@@ -1,0 +1,40 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "types": [],
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "src/*": [
+        "src/*"
+      ],
+      "assets/*": [
+        "src/assets/*"
+      ],
+      "fonts/*": [
+        "src/fonts/*"
+      ],
+      "components/*": [
+        "src/components/*"
+      ],
+      "root/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "types/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "platforms",
+    "hooks",
+    "src/App_Resources"
+  ]
+}
