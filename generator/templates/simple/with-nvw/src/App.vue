@@ -129,9 +129,7 @@
       }"` + `>`
     : ``
 %>
-  .nvw-action-bar {
-    color: #42b983;
-  }
+  @import 'styles/style-one';
 </style>
 <%_ } else { _%>
 <%# -------------------- IS Using stylus -------------------- -%>

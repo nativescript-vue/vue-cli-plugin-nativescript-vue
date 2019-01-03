@@ -94,9 +94,7 @@
       }"` + `>`
     : ``
 %>
- .w-navbar {
-    color: #42b983;
-  }
+  @import 'styles/style-one';
 
   .w-page {
     height: 100%;

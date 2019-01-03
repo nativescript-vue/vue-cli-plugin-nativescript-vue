@@ -6,5 +6,5 @@
 	"semicolons": true,
 	"bracketSpacing": true,
 	"arrowParens": "always",
-	"useTabs": true
+	"useTabs": false
 }

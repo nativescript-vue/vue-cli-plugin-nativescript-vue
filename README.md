@@ -55,14 +55,24 @@ You will have several options in serving and building the project:
 
 The basic `serve` and `build` options should be similar to what is in a CLI 3 project except the added options to dictate which kind of environment you are using: `web`, `android` or `ios`.  Please note that when building web projects, they will output to `dist` and when building native projects, they will output to `platforms\android` or `platforms\ios` depending on which you are building at the time.
 
+#### --env command line recognition
+Basic support for passing the `env` command line option is in place, but has a slightly different syntax since we're working with the CLI 3 webpack infrastructure.  To inject items into `env` at run-time, you will need to add `-- --env.option` Where option is one of the recognized options that Nativescript-Vue and this project supports.
+An example of this would be something like this: `npm run serve:android -- --env.production`.  This would allow you to serve up a Production build of your Android app versus just running `npm run serve:android` which would serve a Development version of the same.
+
 #### Webpack related information
 The options passed in at `npm run` will dictate what webpack config is provided.  The first choice webpack will make is if this is a `web` or `native` environment.  Then, if it's a `native` environment, it will determine choices to be made between `ios` and `android`.
 
 Each time the project is built or served, the plugin will copy the latest webpack config from the cli to the root of your project.  When you build a project, it will clean-up this file at the end, but just serving the project will not.  This is an issue with [nativescript-dev-webpack](https://github.com/NativeScript/nativescript-dev-webpack) and cannot be overcome at this time.
 
 #### Inspecting the Webpack config
-If you'd like to see what the webpack config is doing then you can run the following:
-`vue inspect --mode development.web > output.js` and the `output.js` file in root will show you what's going on.  Subtitute `development.android` or `production.ios`, etc to see the different configs based on the environmental variables.
+If you'd like to see what the webpack config is doing then you can run one of the following:
+1. `npm run inspect:android`
+2. `npm run inspect:ios`
+3. `npm run inspect:web`
+
+These will default to showing you the Development version of the webpack config. You can pass in the `-- --env.production` option to see the Production version of the config.  
+
+If you'd like to control this on your own and not use the provided `npm scripts` then you can do something like: `vue inspect --mode development.web > output.js` and the `output.js` file in root will show you what's going on.  Subtitute `development.android` or `production.ios`, etc to see the different configs based on the environmental variables.
 
 #### Aliases
 Prebuilt in the webpack config are several aliases that you can use.  Here is a table listing out the various alias and the folder they use based on the environment chosen:

@@ -62,9 +62,8 @@
       }"` + `>`
     : ``
 %>
-  ActionBar {
-    color: #42b983;
-  }
+  @import 'styles/style-two';
+  @import 'styles/style-three';
 </style>
 <%_ } else { _%>
 <%# -------------------- IS Using stylus -------------------- -%>

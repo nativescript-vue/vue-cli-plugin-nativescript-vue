@@ -67,6 +67,8 @@
       }"` + `>`
     : ``
 %>
+  @import 'styles/style-three';
+
   img {
     display: block;
     margin: auto;

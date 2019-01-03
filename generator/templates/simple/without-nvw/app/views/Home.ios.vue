@@ -56,6 +56,8 @@
       }"` + `>`
     : ``
 %>
+  @import 'styles/style-three';
+
   Image {
     height: 50%;
     width: 50%;
