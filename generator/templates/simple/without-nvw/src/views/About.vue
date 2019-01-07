@@ -15,8 +15,9 @@
 <%# -------------------- <script lang="ts"></script>  -------------------- -%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
-<%# -------------------- IS Using scss OR sass -------------------- -%>
+<%_ if (rootOptions.cssPreprocessor) { _%>
+<%_   if (rootOptions.cssPreprocessor !== 'stylus') { _%>
+<%#   -------------------- IS Using scss OR sass -------------------- -%>
 <%- rootOptions.cssPreprocessor
     ? `<style scoped lang="${
         rootOptions.cssPreprocessor === 'sass'
@@ -26,8 +27,13 @@
     : ``
 %>
 </style>
-<%_ } else { _%>
-<%# -------------------- IS Using stylus -------------------- -%>
+<%_   } else { _%>
+<%#   -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
+</style>
+<%_   } _%>
+<%_ } else { _%>
+<%# -------------------- IS Using standard CSS -------------------- -%>
+<style scoped>
 </style>
 <%_ } _%>

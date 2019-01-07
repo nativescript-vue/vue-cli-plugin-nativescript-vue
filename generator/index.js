@@ -78,10 +78,10 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '4.2.0'
+        version: '5.1.0'
       },
       'tns-android': {
-        version: '4.2.0'
+        version: '5.1.0'
       }
     },
     scripts: {
@@ -99,7 +99,7 @@ module.exports = async (api, options, rootOptions) => {
     },
     dependencies: {
       'nativescript-vue': '^2.0.2',
-      'tns-core-modules': '^4.2.1'
+      'tns-core-modules': '^5.1.0'
     },
     devDependencies: {
       'cross-env': '^5.2.0',

@@ -57,8 +57,9 @@
 </script>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
-<%# -------------------- IS Using scss OR sass -------------------- -%>
+<%_ if (rootOptions.cssPreprocessor) { _%>
+<%_   if (rootOptions.cssPreprocessor !== 'stylus') { _%>
+<%#   -------------------- IS Using scss OR sass -------------------- -%>
 <%- rootOptions.cssPreprocessor
     ? `<style scoped lang="${
         rootOptions.cssPreprocessor === 'sass'
@@ -75,14 +76,28 @@
     margin-top: 4em;
   }
 </style>
-<%_ } else { _%>
-<%# -------------------- IS Using stylus -------------------- -%>
+<%_   } else { _%>
+<%#   -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
 
   img
     display block
     margin auto
     margin-top 4em
+</style>
+<%_   } _%>
+<%_ } else { _%>
+<%# -------------------- IS Using standard CSS -------------------- -%>
+<style scoped>
+  ActionBar {
+    color: #42b983;
+  }
+  
+  img {
+    display: block;
+    margin: auto;
+    margin-top: 4em;
+  }
 </style>
 <%_ } _%>
 

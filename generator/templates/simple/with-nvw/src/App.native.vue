@@ -52,8 +52,9 @@
 </script>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
-<%# -------------------- IS Using scss OR sass -------------------- -%>
+<%_ if (rootOptions.cssPreprocessor) { _%>
+<%_   if (rootOptions.cssPreprocessor !== 'stylus') { _%>
+<%#   -------------------- IS Using scss OR sass -------------------- -%>
 <%- rootOptions.cssPreprocessor
   ? `<style scoped lang="${
     rootOptions.cssPreprocessor === 'sass'
@@ -65,10 +66,19 @@
   @import 'styles/style-two';
   @import 'styles/style-three';
 </style>
-<%_ } else { _%>
-<%# -------------------- IS Using stylus -------------------- -%>
+<%_   } else { _%>
+<%#   -------------------- IS Using stylus -------------------- -%>
 <style lang="stylus">
   ActionBar
     color #42b983
+</style>
+<%_   } _%>
+<%_ } else { _%>
+<%# -------------------- IS Using standard CSS -------------------- -%>
+<style>
+  ActionBar {
+    color: #42b983;
+    background-color: #000
+  }
 </style>
 <%_ } _%>

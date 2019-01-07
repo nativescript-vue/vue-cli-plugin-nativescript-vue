@@ -119,8 +119,9 @@
 <%# -------------------- don't do anything -------------------- -%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<%_ if (rootOptions.cssPreprocessor !== 'stylus') { _%>
-<%# -------------------- IS Using scss OR sass -------------------- -%>
+<%_ if (rootOptions.cssPreprocessor) { _%>
+<%_   if (rootOptions.cssPreprocessor !== 'stylus') { _%>
+<%#   -------------------- IS Using scss OR sass -------------------- -%>
 <%- rootOptions.cssPreprocessor
     ? `<style scoped lang="${
         rootOptions.cssPreprocessor === 'sass'
@@ -131,10 +132,18 @@
 %>
   @import 'styles/style-one';
 </style>
-<%_ } else { _%>
-<%# -------------------- IS Using stylus -------------------- -%>
+<%_   } else { _%>
+<%#   -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
   .nvw-action-bar
     color #42b983
+</style>
+<%_   } _%>
+<%_ } else { _%>
+<%# -------------------- IS Using standard CSS -------------------- -%>
+<style>
+  .nvw-action-bar {
+    color: #42b983;
+  }
 </style>
 <%_ } _%>
