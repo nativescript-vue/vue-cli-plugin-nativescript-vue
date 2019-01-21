@@ -74,27 +74,18 @@ module.exports = (api, projectOptions) => {
     return all;
   };
   const env = flags.reduce(addOption, {});
-  //console.log('env - ', env);
 
   const platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
-  //console.log('platform - ', platform);
 
   // if (!platform) {
   //   throw new Error('You need to provide a target platform!');
   // }
 
   const projectRoot = api.service.context;
-  //console.log('projectRoot - ', projectRoot);
   const isNVW = fs.pathExistsSync(resolve(projectRoot, 'src', 'main.native' + jsOrTs));
-  //console.log('isNVW - ', isNVW);
-
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
-  //console.log('appMode - ', appMode);
-
-  //process.env.VUE_APP_MODE = appMode;
 
   projectOptions.outputDir = join(projectRoot, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, projectRoot));
-  //console.log('dist - ', projectOptions.outputDir);
 
   return appMode === 'web'
     ? webConfig(api, projectOptions, env, jsOrTs, projectRoot, isNVW)
@@ -117,7 +108,6 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
   // Default destination inside platforms/<platform>/...
   const dist = projectOptions.outputDir;
   const appResourcesPlatformDir = platform === 'android' ? 'Android' : 'iOS';
-  //console.log('appResourcesPlatformDir - ', appResourcesPlatformDir);
 
   const {
     // The 'appPath' and 'appResourcesPath' values are fetched from
@@ -139,20 +129,13 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
   const externals = (env.externals || []).map((e) => {
     return new RegExp(e + '.*');
   });
-  //console.log('externals - ', externals);
 
   const mode = production ? 'production' : 'development';
-  // // // // console.log('mode - ', mode);
 
   const appFullPath = resolve(projectRoot, appPath);
-  // // // // console.log('appFullPath - ', appFullPath);
   const appResourcesFullPath = resolve(projectRoot, appResourcesPath);
-  // // // // console.log('appResourcesFullPath - ', appResourcesFullPath);
-
   const entryModule = nsWebpack.getEntryModule(appFullPath);
-  // // // // console.log('entryModule - ', entryModule);
   const entryPath = `.${sep}${entryModule}`;
-  // // // // console.log('entryPath - ', entryPath);
 
   console.log(`Bundling application for entryPath ${entryPath}...`);
 
@@ -759,11 +742,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
   } = env;
 
   const mode = production ? 'production' : 'development';
-
-  // const appFullPath = resolve(projectRoot, appPath);;
-  // // // // // console.log('appFullPath - ', appFullPath);
   const appResourcesFullPath = resolve(projectRoot, appResourcesPath);
-  // // // // console.log('appResourcesFullPath - ', appResourcesFullPath);
 
   api.chainWebpack((config) => {
     config.entry('app').clear();
@@ -805,9 +784,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
       .loader('vue-loader')
       .options(
         Object.assign(
-          {
-            //compiler: NsVueTemplateCompiler,
-          },
+          {},
           config.module
             .rule('vue')
             .uses.get('vue-loader')
@@ -820,7 +797,6 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
       .rule('images')
       .uses.get('url-loader')
       .get('options');
-    //imageLoaderOptions.fallback.options.name = isNVW ? 'assets/[name].[ext]' : 'assets/[name][hash:8].[ext]';
     imageLoaderOptions.fallback.options.name = 'assets/[name][hash:8].[ext]';
     config.module.rules.delete('images');
 
@@ -874,9 +850,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
             {
               from: {
                 glob: '**/*.+(jpg|png)'
-              } //,
-              //to: join(dist, 'assets/[name][hash:8].[ext]'),
-              //ignore: ['assets']
+              }
             },
             {
               from: {

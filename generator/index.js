@@ -6,15 +6,6 @@ const replace = require('replace-in-file');
 const newline = process.platform === 'win32' ? '\r\n' : '\n';
 
 module.exports = async (api, options, rootOptions) => {
-  // console.log('options.isNativeOrDual - ', options.isNativeOrDual);
-  // console.log('options.isNVW - ', options.isNVW);
-  // console.log('options.isNewProject - ', options.isNewProject);
-  // console.log('options.templateType - ', options.templateType);
-
-  // console.log('usingTS - ', api.hasPlugin('typescript'));
-  // console.log('usingBabel - ', api.hasPlugin('babel'));
-  // console.log('rootOptions.cssPreprocessor - ', rootOptions.cssPreprocessor);
-
   if (options.isNVW === undefined) options.isNVW = false;
 
   const genConfig = {
@@ -62,10 +53,6 @@ module.exports = async (api, options, rootOptions) => {
     applicationLicense: api.generator.pkg.license || 'MIT',
     applicationId: options.applicationId,
     historyMode: options.historyMode,
-    // doesCompile: api.hasPlugin('babel') || api.hasPlugin('typescript'),
-    // usingBabel: api.hasPlugin('babel'),
-    // usingTS: api.hasPlugin('typescript'),
-    // usingNVW: options.isNVW
     doesCompile: api.hasPlugin('babel') || api.hasPlugin('typescript') ? true : false,
     usingBabel: api.hasPlugin('babel') ? true : false,
     usingTS: api.hasPlugin('typescript') ? true : false,
@@ -93,8 +80,13 @@ module.exports = async (api, options, rootOptions) => {
       'remove-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post',
       'serve:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle --env.development',
       'serve:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle --env.development',
-      'inspect:android': 'npm run setup-webpack-config && vue inspect -- --env.android > out-android.js',
-      'inspect:ios': 'npm run setup-webpack-config && vue inspect -- --env.ios > out-ios.js',
+      // 'inspect:android': 'npm run setup-webpack-config && vue inspect -- --env.android > out-android.js',
+      // 'inspect:ios': 'npm run setup-webpack-config && vue inspect -- --env.ios > out-ios.js',
+      'debug:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns debug android --bundle --env.development',
+      'debug:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns debug ios --bundle --env.development',
+      'preview:android':
+        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.android',
+      'preview:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.ios',
       'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre'
     },
     dependencies: {
@@ -115,7 +107,7 @@ module.exports = async (api, options, rootOptions) => {
       scripts: {
         'serve:web': 'vue-cli-service serve --mode development.web --env.development --env.web',
         'build:web': 'vue-cli-service build --mode production.web --env.production --env.web',
-        'inspect:web': 'npm run setup-webpack-config && vue inspect -- --env.web > out-web.js'
+        //'inspect:web': 'npm run setup-webpack-config && vue inspect -- --env.web > out-web.js'
       }
     });
 
@@ -306,9 +298,7 @@ module.exports = async (api, options, rootOptions) => {
 
       // we need to edit the tsconfig.json file in /app
       // for a Native only project to remove references to /src
-      //////if (options.isNativeOrDual === 'native') {
       tsconfigSetup(options, genConfig.dirPathPrefix, genConfig.nativeAppPathModifier);
-      //////}
     }
 
     // the main difference between New and Existing for this section is
