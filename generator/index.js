@@ -191,6 +191,19 @@ module.exports = async (api, options, rootOptions) => {
     });
   }
 
+  // if the project is using eslint, add some global variables
+  // to the eslintConfig in order to avoid no-def errors
+  if (api.hasPlugin('eslint')) {
+    api.extendPackage({
+      eslintConfig: {
+        globals: {
+          "TNS_APP_MODE": true,
+          "TNS_APP_PLATFORM": true
+        }
+      }
+    })
+  }
+
   console.log('deleting from package.json');
   api.extendPackage((pkg) => {
     // if the project is using babel, then delete babel-core

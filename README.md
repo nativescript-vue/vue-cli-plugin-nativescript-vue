@@ -26,18 +26,18 @@ vue invoke vue-cli-plugin-nativescript-vue
 
 ## Invocation Prompts
 1.  Enter a unique application identifier
-    * Accpeting the default is fine for testing
+    * Accepting the default is fine for testing
 2.  Use HTML5 history mode? (Default: hash mode)
     * Required parameter for the cli core generator when vue-router is used
 3.  Is this a brand new project? (Default: Yes)
-    * By choosing `No`, the plugin will try and be as non-destructive as possible to an existing project.  It will do this by adding a folder into root named `ns-example` and add files into there to provide examples of how a project would change.  
+    * By choosing `No`, the plugin will try and be as non-destructive as possible to an existing project.  It will do this by adding a folder into root named `ns-example` and add files into there to provide examples of how a project would change.
     * These changes will factor in answers to the other questions and adjust accordingly.  Regardless of the answer, the plugin will install packages and adjust `package.json` as necessary to prep the project.
 4.  Dual Native AND Web development experience or a Native only? (Default: Dual)
     * By default, the plugin will assume you want to develop for the Web and Native environments within the same project.  As such, there will be two sides to the project where web environments will be actively developed within `/src` and Native environments will be developed within `/app` unless you choose to integrate `Nativescript-Vue-Web` and all files will be placed in `/src`.
-    * Warning: Choosing to develop for Native only will move the main entry point of the project and development folder to `/app`, it will copy the necessary files and then delete `/src`.  
+    * Warning: Choosing to develop for Native only will move the main entry point of the project and development folder to `/app`, it will copy the necessary files and then delete `/src`.
     * By choosing `Dual`, you will be able to bring your own component framework into the web portion of the project.  `NativeScript-Vue` [cannot use vue-router](https://nativescript-vue.org/en/docs/routing/vue-router/) currently, so you will have to provide your own manual routing.  The templated options deployed with the plugin will show how to do basic manual routing.
 5.  Use [Nativescript-Vue-Web](https://github.com/Nativescript-Vue-Web/Nativescript-Vue-Web) to develop web components with `Nativescript-Vue` syntax? (Default: No)
-    * This prompt should only appear if you have chosen to develop in the Dual Web and Native environments. 
+    * This prompt should only appear if you have chosen to develop in the Dual Web and Native environments.
     * By chosing `Yes. Use Nativescript-Vue-Web component framework`, it will effecively integrate a web component framework that will allow you to develop components that can be used in the Web and Native side of the project.  It uses `NativeScript-Vue` like syntax on components which will allow for the sharing of components between NativeScript and Web.
 6.  What type of template do you want to start with? (Default: Simple)
     * Simple is just a simple setup with a header and basic routing.
@@ -148,6 +148,7 @@ Each time the project is built or served, the plugin will copy the latest webpac
 
 #### Inspecting the Webpack config
 If you'd like to see what the webpack config is doing then you can run one of the following:
+
 1. `vue inspect -- --env.android > out-android.js`
 2. `vue inspect -- --env.ios > out-android.js`
 3. `vue inspect -- --env.web > out-web.js`
@@ -175,9 +176,9 @@ If your CLI 3 project has TypeScript enabled, then the plugin will attempt to gi
 There will also be additional `tsconfig.json` files added into the root that allow for specific configurations depending on the type of environment you are building for.  You will see a `tsconfig.web.json` and a `tsconfig.native.json` file that extend the base `tsconfig.json` file in root.  The plugin's webpack integration will ensure the correct `tsconfig` file is referenced at runtime.
 
 ## For Native environment development
-It should be noted that the plugin will give you the ability to develop generic SFC's (\*.native.vue) to be used in both Android and IOS, or if you need to differentiate between Android (\*.android.vue) and IOS (\*.ios.vue) then you can change the SFC's extension to map to the environment you choose.  
+It should be noted that the plugin will give you the ability to develop generic SFC's (\*.native.vue) to be used in both Android and IOS, or if you need to differentiate between Android (\*.android.vue) and IOS (\*.ios.vue) then you can change the SFC's extension to map to the environment you choose.
 
-At `serve` or `build` in conjunction with the mode such as `android` or `ios`, it will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when your are doing the same for `ios` and will ignore `*.android.vue` files.  
+At `serve` or `build` in conjunction with the mode such as `android` or `ios`, it will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when your are doing the same for `ios` and will ignore `*.android.vue` files.
 
 This will allow you to develop generic native components under the `*.native.vue` file extension, but in special cases, it may require you to do platform specific components.  Use the corrosponding file extension to allow this to happen.
 
