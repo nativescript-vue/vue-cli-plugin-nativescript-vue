@@ -24,8 +24,9 @@ const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
 const { NativeScriptWorkerPlugin } = require('nativescript-worker-loader/NativeScriptWorkerPlugin');
 
 const resolveExtensionsOptions = {
-  web: ['.ts', '.tsx', '.js', '.jsx', '.vue', '.json', '.scss', '.css'],
+  web: ['*', '.ts', '.tsx', '.js', '.jsx', '.vue', '.json', '.scss', '.styl', '.less', '.css'],
   android: [
+    '*',
     '.native.ts',
     '.android.ts',
     '.ts',
@@ -39,11 +40,18 @@ const resolveExtensionsOptions = {
     '.native.scss',
     '.android.scss',
     '.scss',
+    '.native.styl',
+    '.android.styl',
+    '.styl',
+    '.native.less',
+    '.android.less',
+    '.less',
     '.native.css',
     '.android.css',
     '.css'
   ],
   ios: [
+    '*',
     '.native.ts',
     '.ios.ts',
     '.ts',
@@ -57,10 +65,21 @@ const resolveExtensionsOptions = {
     '.native.scss',
     '.ios.scss',
     '.scss',
+    '.native.styl',
+    '.ios.styl',
+    '.styl',
+    '.native.less',
+    '.ios.less',
+    '.less',
     '.native.css',
     '.ios.css',
     '.css'
   ]
+};
+
+const getBlockRegex = (tag, mode) => {
+  //return `<${tag} ${mode}([\\s]+[\\S]+(="[\\S]+")?)*[\\s]*>[\\s\\S]*?<\/${tag}>`;
+  return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/${tag}>)`;
 };
 
 module.exports = (api, projectOptions) => {
@@ -82,25 +101,23 @@ module.exports = (api, projectOptions) => {
   // }
 
   const projectRoot = api.service.context;
-  const isNVW = fs.pathExistsSync(resolve(projectRoot, 'src', 'main.native' + jsOrTs));
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
 
+  // setup output directory depending on if we're building for web or native
   projectOptions.outputDir = join(projectRoot, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, projectRoot));
 
-  return appMode === 'web'
-    ? webConfig(api, projectOptions, env, jsOrTs, projectRoot, isNVW)
-    : nativeConfig(api, projectOptions, env, jsOrTs, projectRoot, isNVW, platform);
+  return appMode === 'web' ? webConfig(api, projectOptions, env, jsOrTs, projectRoot) : nativeConfig(api, projectOptions, env, jsOrTs, projectRoot, platform);
 };
 
 const resolveExtensions = (config, ext) => {
   config.resolve.extensions.add(ext).end();
 };
 
-const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, platform) => {
+const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) => {
   console.log('starting nativeConfig');
   process.env.VUE_CLI_TARGET = 'nativescript';
   const isNativeOnly = !fs.pathExistsSync(resolve(projectRoot, 'src'));
-  const tsconfigFileName = isNVW === true ? 'tsconfig.web.json' : 'tsconfig.native.json';
+  const tsconfigFileName = 'tsconfig.json';
 
   const appComponents = ['tns-core-modules/ui/frame', 'tns-core-modules/ui/frame/activity'];
   const platforms = ['ios', 'android'];
@@ -113,7 +130,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
     // The 'appPath' and 'appResourcesPath' values are fetched from
     // the nsconfig.json configuration file
     // when bundling with `tns run android|ios --bundle`.
-    appPath = isNVW === true ? 'src' : 'app',
+    appPath = isNativeOnly === true ? 'app' : 'src',
     appResourcesPath = join(appPath, 'App_Resources'),
 
     // You can provide the following flags when running 'tns run android|ios'
@@ -122,8 +139,6 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
     report, // --env.report
     hmr // --env.hmr
   } = env;
-
-  //console.log('env - ', env);
 
   // --env.externals
   const externals = (env.externals || []).map((e) => {
@@ -208,6 +223,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .set('~', appFullPath)
       .set('@', appFullPath)
       .set('src', api.resolve('src'))
+      .set('app', isNativeOnly ? api.resolve('app') : api.resolve('src'))
       .set('assets', resolve(isNativeOnly ? api.resolve('app') : api.resolve('src'), 'assets'))
       .set('components', resolve(isNativeOnly ? api.resolve('app') : api.resolve('src'), 'components'))
       .set('fonts', resolve(isNativeOnly ? api.resolve('app') : api.resolve('src'), 'fonts'))
@@ -247,8 +263,6 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .end();
 
     config.optimization.minimize(Boolean(production));
-    //config.optimization.minimize(mode === 'production' ? true : false).end();
-    //config.optimization.minimize(false).end();
     config.optimization
       .minimizer([
         new UglifyJsPlugin({
@@ -303,6 +317,37 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
         Object.assign(
           {
             compiler: NsVueTemplateCompiler
+          },
+          {}
+        )
+      )
+      .before('string-replace-loader')
+      .end()
+      .use('string-replace-loader')
+      .loader('string-replace-loader')
+      .options(
+        Object.assign(
+          {
+            multiple: [
+              {
+                search: getBlockRegex('template', 'web'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              },
+              {
+                search: getBlockRegex('script', 'web'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              },
+              {
+                search: getBlockRegex('style', 'web'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              }
+            ]
           },
           {}
         )
@@ -397,15 +442,15 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .loader('css-loader')
       .options(
         Object.assign(
-          {
-            minimize: false,
-            url: false
-          },
           config.module
             .rule('css')
             .oneOf('normal')
             .uses.get('css-loader')
-            .get('options')
+            .get('options'),
+          {
+            minimize: false,
+            url: false
+          }
         )
       )
       .end();
@@ -441,16 +486,16 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .loader('css-loader')
       .options(
         Object.assign(
-          {
-            minimize: false,
-            url: false,
-            data: '$PLATFORM: ' + platform + ';'
-          },
           config.module
             .rule('scss')
             .oneOf('normal')
             .uses.get('css-loader')
-            .get('options')
+            .get('options'),
+          {
+            minimize: false,
+            url: false,
+            data: '$PLATFORM: ' + platform + ';'
+          }
         )
       )
       .end()
@@ -458,16 +503,16 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .loader('sass-loader')
       .options(
         Object.assign(
-          {
-            minimize: false,
-            url: false,
-            data: '$PLATFORM: ' + platform + ';'
-          },
           config.module
             .rule('scss')
             .oneOf('normal')
             .uses.get('sass-loader')
-            .get('options')
+            .get('options'),
+          {
+            minimize: false,
+            url: false,
+            data: '$PLATFORM: ' + platform + ';'
+          }
         )
       )
       .end();
@@ -503,15 +548,16 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .loader('css-loader')
       .options(
         Object.assign(
-          {
-            minimize: false,
-            url: false
-          },
           config.module
             .rule('sass')
             .oneOf('normal')
             .uses.get('css-loader')
-            .get('options')
+            .get('options'),
+          {
+            minimize: false,
+            url: false,
+            data: '$PLATFORM: ' + platform + ';'
+          }
         )
       )
       .end()
@@ -519,15 +565,128 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       .loader('sass-loader')
       .options(
         Object.assign(
-          {
-            minimize: false,
-            url: false
-          },
           config.module
             .rule('sass')
             .oneOf('normal')
             .uses.get('sass-loader')
-            .get('options')
+            .get('options'),
+          {
+            minimize: false,
+            url: false,
+            data: '$PLATFORM: ' + platform + ';'
+          }
+        )
+      )
+      .end();
+
+    // remove most of the stylus rules and rebuild it for nativescript-vue
+    config.module.rules.get('stylus').oneOfs.delete('vue-modules');
+    config.module.rules.get('stylus').oneOfs.delete('normal-modules');
+    config.module.rules.get('stylus').oneOfs.delete('vue');
+    config.module.rules
+      .get('stylus')
+      .oneOfs.get('normal')
+      .uses.delete('vue-style-loader');
+    config.module.rules
+      .get('stylus')
+      .oneOfs.get('normal')
+      .uses.delete('postcss-loader');
+    config.module
+      .rule('stylus')
+      .oneOf('normal')
+      .use('nativescript-dev-webpack/apply-css-loader')
+      .loader('nativescript-dev-webpack/apply-css-loader')
+      .before('css-loader')
+      .end()
+      .use('nativescript-dev-webpack/style-hot-loader')
+      .loader('nativescript-dev-webpack/style-hot-loader')
+      .before('nativescript-dev-webpack/apply-css-loader')
+      .end()
+      .use('css-loader')
+      .loader('css-loader')
+      .options(
+        Object.assign(
+          config.module
+            .rule('stylus')
+            .oneOf('normal')
+            .uses.get('css-loader')
+            .get('options'),
+          {
+            minimize: false,
+            url: false
+          }
+        )
+      )
+      .end()
+      .use('stylus-loader')
+      .loader('stylus-loader')
+      .options(
+        Object.assign(
+          config.module
+            .rule('stylus')
+            .oneOf('normal')
+            .uses.get('stylus-loader')
+            .get('options'),
+          {
+            minimize: false,
+            url: false
+          }
+        )
+      )
+      .end();
+
+    // remove most of the less rules and rebuild it for nativescript-vue
+    config.module.rules.get('less').oneOfs.delete('vue-modules');
+    config.module.rules.get('less').oneOfs.delete('normal-modules');
+    config.module.rules.get('less').oneOfs.delete('vue');
+    config.module.rules
+      .get('less')
+      .oneOfs.get('normal')
+      .uses.delete('vue-style-loader');
+    config.module.rules
+      .get('less')
+      .oneOfs.get('normal')
+      .uses.delete('postcss-loader');
+    config.module
+      .rule('less')
+      .oneOf('normal')
+      .use('nativescript-dev-webpack/apply-css-loader')
+      .loader('nativescript-dev-webpack/apply-css-loader')
+      .before('css-loader')
+      .end()
+      .use('nativescript-dev-webpack/style-hot-loader')
+      .loader('nativescript-dev-webpack/style-hot-loader')
+      .before('nativescript-dev-webpack/apply-css-loader')
+      .end()
+      .use('css-loader')
+      .loader('css-loader')
+      .options(
+        Object.assign(
+          config.module
+            .rule('less')
+            .oneOf('normal')
+            .uses.get('css-loader')
+            .get('options'),
+          {
+            minimize: false,
+            url: false
+          }
+        )
+      )
+      .end()
+      .use('less-loader')
+      .loader('less-loader')
+      .options(
+        Object.assign(
+          config.module
+            .rule('less')
+            .oneOf('normal')
+            .uses.get('less-loader')
+            .get('options'),
+          {
+            minimize: false,
+            url: false
+          }
         )
       )
       .end();
@@ -540,8 +699,8 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
     config.module.rules.delete('fonts');
     config.module.rules.delete('pug');
     config.module.rules.delete('postcss');
-    config.module.rules.delete('less');
-    config.module.rules.delete('stylus');
+    // // config.module.rules.delete('less');
+    // // config.module.rules.delete('stylus');
     config.module.rules.delete('eslint').end();
 
     // delete these plugins that come standard with CLI 3
@@ -669,11 +828,9 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
       // directly to edit it.
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-      forTSPluginConfig.tsconfig = resolve(projectRoot, tsconfigFileName); // // resolve(appFullPath, 'tsconfig.json');
+      forTSPluginConfig.tsconfig = resolve(projectRoot, tsconfigFileName);
       forTSPluginConfig.tslint = resolve(projectRoot, 'tslint.json');
       forTSPluginConfig.checkSyntacticErrors = false;
-
-      // console.log('forTSPluginConfig - ', forTSPluginConfig)
 
       config.plugins.delete('fork-ts-checker').end();
 
@@ -723,7 +880,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW, plat
   });
 };
 
-const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
+const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
   console.log('starting webConfig');
   const dist = projectOptions.outputDir;
 
@@ -731,7 +888,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
     // The 'appPath' and 'appResourcesPath' values are fetched from
     // the nsconfig.json configuration file
     // when bundling with `tns run android|ios --bundle`.
-    appPath = isNVW === true ? 'src' : 'app',
+    appPath = 'src',
     appResourcesPath = join(appPath, 'App_Resources'),
 
     // You can provide the following flags when running 'tns run android|ios'
@@ -791,6 +948,36 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
             .get('options')
         )
       )
+      .end()
+      .use('string-replace-loader')
+      .loader('string-replace-loader')
+      .options(
+        Object.assign(
+          {
+            multiple: [
+              {
+                search: getBlockRegex('template', 'native'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              },
+              {
+                search: getBlockRegex('script', 'native'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              },
+              {
+                search: getBlockRegex('style', 'native'),
+                replace: '',
+                flags: 'gim',
+                strict: false
+              }
+            ]
+          },
+          {}
+        )
+      )
       .end();
 
     const imageLoaderOptions = config.module
@@ -832,40 +1019,38 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
       ])
       .end();
 
-    if (isNVW) {
-      // Copy assets to out dir. Add your own globs as needed.
-      // if the project is native-only then we want to copy files
-      // from the app directory and not the src directory as at
-      // that point, the src directory should have been removed
-      // when the plugin was originally invoked.
-      config
-        .plugin('copy-assets')
-        .use(CopyWebpackPlugin, [
-          [
-            {
-              from: {
-                glob: 'fonts/**'
-              }
-            },
-            {
-              from: {
-                glob: '**/*.+(jpg|png)'
-              }
-            },
-            {
-              from: {
-                glob: 'assets/**/*',
-                ignore: ['**/*.+(jpg|png)']
-              }
-            }
-          ],
+    // Copy assets to out dir. Add your own globs as needed.
+    // if the project is native-only then we want to copy files
+    // from the app directory and not the src directory as at
+    // that point, the src directory should have been removed
+    // when the plugin was originally invoked.
+    config
+      .plugin('copy-assets')
+      .use(CopyWebpackPlugin, [
+        [
           {
-            context: resolve(api.resolve('src')),
-            ignore: [`${relative(appPath, appResourcesFullPath)}/**`]
+            from: {
+              glob: 'fonts/**'
+            }
+          },
+          {
+            from: {
+              glob: '**/*.+(jpg|png)'
+            }
+          },
+          {
+            from: {
+              glob: 'assets/**/*',
+              ignore: ['**/*.+(jpg|png)']
+            }
           }
-        ])
-        .end();
-    }
+        ],
+        {
+          context: resolve(api.resolve('src')),
+          ignore: [`${relative(appPath, appResourcesFullPath)}/**`]
+        }
+      ])
+      .end();
 
     // only adjust ts-loaders when we're using typescript in the project
     if (api.hasPlugin('typescript')) {
@@ -874,7 +1059,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
         .uses.get('ts-loader')
         .get('options');
 
-      tsConfigOptions.configFile = resolve(projectRoot, 'tsconfig.web.json');
+      tsConfigOptions.configFile = resolve(projectRoot, 'tsconfig.json');
 
       config.module
         .rule('ts')
@@ -889,7 +1074,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
         .uses.get('ts-loader')
         .get('options');
 
-      tsxConfigOptions.configFile = resolve(projectRoot, 'tsconfig.web.json');
+      tsxConfigOptions.configFile = resolve(projectRoot, 'tsconfig.json');
 
       config.module
         .rule('tsx')
@@ -905,7 +1090,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot, isNVW) => {
       // directly to edit it.
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-      forTSPluginConfig.tsconfig = resolve(projectRoot, 'tsconfig.web.json');
+      forTSPluginConfig.tsconfig = resolve(projectRoot, 'tsconfig.json');
       forTSPluginConfig.tslint = resolve(projectRoot, 'tslint.json');
 
       config.plugins.delete('fork-ts-checker').end();

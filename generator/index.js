@@ -6,8 +6,6 @@ const replace = require('replace-in-file');
 const newline = process.platform === 'win32' ? '\r\n' : '\n';
 
 module.exports = async (api, options, rootOptions) => {
-  if (options.isNVW === undefined) options.isNVW = false;
-
   const genConfig = {
     // if it is a new project changes will be written as they normally would with any plugin
     // if it is an existing project, changes will be added to the ./ns-example directory
@@ -19,10 +17,10 @@ module.exports = async (api, options, rootOptions) => {
 
     // A template type of 'simple' project will have a base template path that equals: ./templates/simple
     // then we determine if the project is using Nativescript-Vue-Web and we append a subdirectory to the base path
-    templateTypePathModifer: options.isNVW === false ? options.templateType + '/' + 'without-nvw' : options.templateType + '/' + 'with-nvw',
+    templateTypePathModifer: options.templateType,
 
     // Get the location to the native app directory
-    nativeAppPathModifier: options.isNVW ? 'src/' : 'app/',
+    nativeAppPathModifier: options.isNativeOnly ? 'app/' : 'src/',
 
     // Determine the path to App_Resources
     get appResourcesPathModifier() {
@@ -35,15 +33,6 @@ module.exports = async (api, options, rootOptions) => {
     }
   };
 
-  // New Project & Native Only -- should never be able to use Nativescript-Vue-Web
-  if (options.isNativeOrDual === 'native' && options.isNVW) {
-    throw Error('Invalid options chosen.  You cannot have a Native only project and use Nativescript-Vue-Web');
-  }
-
-  // if Native only, then we make absolutely sure you will not be able to
-  // add NativeScript-Vue-Web into the project as it's not needed
-  if (options.isNativeOrDual === 'native') options.isNVW = false;
-
   // common render options to be passed to render functions
   const commonRenderOptions = {
     applicationName: api.generator.pkg.name,
@@ -55,8 +44,7 @@ module.exports = async (api, options, rootOptions) => {
     historyMode: options.historyMode,
     doesCompile: api.hasPlugin('babel') || api.hasPlugin('typescript') ? true : false,
     usingBabel: api.hasPlugin('babel') ? true : false,
-    usingTS: api.hasPlugin('typescript') ? true : false,
-    usingNVW: options.isNVW ? true : false
+    usingTS: api.hasPlugin('typescript') ? true : false
   };
 
   console.log('adding to package.json');
@@ -65,10 +53,10 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '5.1.0'
+        version: '5.2.0'
       },
       'tns-android': {
-        version: '5.1.0'
+        version: '5.2.0'
       }
     },
     scripts: {
@@ -91,31 +79,33 @@ module.exports = async (api, options, rootOptions) => {
     },
     dependencies: {
       'nativescript-vue': '^2.0.2',
-      'tns-core-modules': '^5.1.0'
+      'tns-core-modules': '^5.2.1'
     },
     devDependencies: {
       'cross-env': '^5.2.0',
       'nativescript-dev-webpack': '^0.17.0',
       'nativescript-vue-template-compiler': '^2.0.2',
-      'nativescript-worker-loader': '~0.9.1'
+      'nativescript-worker-loader': '~0.9.1',
+      'node-sass': '^4.11.0',
+      'string-replace-loader': '^2.1.1'
     }
   });
 
   // add scripts when we are also developing for the web
-  if (options.isNativeOrDual === 'dual') {
+  if (!options.isNativeOnly) {
     api.extendPackage({
       scripts: {
         'serve:web': 'vue-cli-service serve --mode development.web --env.development --env.web',
-        'build:web': 'vue-cli-service build --mode production.web --env.production --env.web',
+        'build:web': 'vue-cli-service build --mode production.web --env.production --env.web'
         //'inspect:web': 'npm run setup-webpack-config && vue inspect -- --env.web > out-web.js'
       }
     });
 
     // if we are using NativeScript-Vue-Web then add the package
-    if (options.isNVW) {
+    if (options.templateType == 'nvw') {
       api.extendPackage({
         dependencies: {
-          'nativescript-vue-web': '^0.9.0'
+          'nativescript-vue-web': '^0.9.4'
         }
       });
     }
@@ -143,34 +133,9 @@ module.exports = async (api, options, rootOptions) => {
       });
     }
 
-    // render tsconfig files
-    api.render(async () => {
-      // render tsconfig.web.json for all Dual Web/NS projects
-      if (options.isNativeOrDual === 'dual') {
-        await renderFilesIndividually(
-          api,
-          options,
-          genConfig.jsOrTs,
-          ['tsconfig.web.json'],
-          commonRenderOptions,
-          './templates/' + options.templateType,
-          genConfig.dirPathPrefix
-        );
-      }
-      // render tsconfig.native.json for:
-      // 1.  Dual Web/NS projects that don't use NativeScript-Vue-Web
-      // 2.  Native Only
-      if (!options.isNVW) {
-        await renderFilesIndividually(
-          api,
-          options,
-          genConfig.jsOrTs,
-          ['tsconfig.native.json'],
-          commonRenderOptions,
-          './templates/' + options.templateType,
-          genConfig.dirPathPrefix
-        );
-      }
+    // lint and fix files after creation is completed
+    api.onCreateComplete(() => {
+      return require('../lib/tslint')({}, api, true);
     });
   }
 
@@ -197,11 +162,11 @@ module.exports = async (api, options, rootOptions) => {
     api.extendPackage({
       eslintConfig: {
         globals: {
-          "TNS_APP_MODE": true,
-          "TNS_APP_PLATFORM": true
+          TNS_APP_MODE: true,
+          TNS_APP_PLATFORM: true
         }
       }
-    })
+    });
   }
 
   console.log('deleting from package.json');
@@ -213,12 +178,11 @@ module.exports = async (api, options, rootOptions) => {
     // we will be replacing these
     delete pkg.scripts['serve'], delete pkg.scripts['build'];
 
-    if (options.isNativeOrDual === 'native') {
-      // delete pkg.dependencies['vue']
+    if (options.isNativeOnly) {
       delete pkg.browserslist;
     }
 
-    if (!options.isNVW) {
+    if (options.templateType !== 'nvw') {
       delete pkg.dependencies['nativescript-vue-web'];
     }
   });
@@ -231,37 +195,27 @@ module.exports = async (api, options, rootOptions) => {
     await renderDirectory(
       api,
       options,
+      rootOptions,
       '.js',
       commonRenderOptions,
       './templates/App_Resources',
-			genConfig.dirPathPrefix + genConfig.appResourcesPathModifier
-		)
+      genConfig.dirPathPrefix + genConfig.appResourcesPathModifier
+    );
   });
 
   // If Native only or Dual Native and Web Project.
-  if (options.isNativeOrDual === 'dual') {
+  if (!options.isNativeOnly) {
     api.render(async () => {
       // render src directory
       await renderDirectory(
         api,
         options,
+        rootOptions,
         genConfig.jsOrTs,
         commonRenderOptions,
         path.join('templates', genConfig.templateTypePathModifer, 'src'),
         genConfig.dirPathPrefix + 'src'
       );
-
-      if (!options.isNVW) {
-        // render app directory seperately
-        await renderDirectory(
-          api,
-          options,
-          genConfig.jsOrTs,
-          commonRenderOptions,
-          path.join('templates', genConfig.templateTypePathModifer, 'app'),
-          genConfig.dirPathPrefix + 'app'
-        );
-      }
 
       // add router statements to src/main.*s
       await vueRouterSetup(api, genConfig.dirPathPrefix, genConfig.jsOrTs);
@@ -276,21 +230,13 @@ module.exports = async (api, options, rootOptions) => {
       await renderDirectory(
         api,
         options,
+        rootOptions,
         genConfig.jsOrTs,
         commonRenderOptions,
-        path.join('templates', genConfig.templateTypePathModifer, 'app'),
+        path.join('templates', genConfig.templateTypePathModifer, 'src'),
         genConfig.dirPathPrefix + genConfig.nativeAppPathModifier.slice(0, -1)
       );
 
-      // render styles directory
-      await renderDirectory(
-        api,
-        options,
-        genConfig.jsOrTs,
-        commonRenderOptions,
-        path.join('templates', genConfig.templateTypePathModifer, 'src', 'styles'),
-        path.join(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier.slice(0, -1), 'styles')
-      );
       // add vuex statements to app/main.*s
       await vuexSetup(api, options, genConfig.dirPathPrefix, genConfig.jsOrTs);
     });
@@ -331,7 +277,7 @@ module.exports = async (api, options, rootOptions) => {
       }
 
       // for new projects that are native only, move files/dirs and delete others
-      if (options.isNativeOrDual === 'native') {
+      if (options.isNativeOnly) {
         // Do these synchronously so that when we delete the ./src directory below
         // we don't try and move a file that no longer exists
         try {
@@ -341,8 +287,6 @@ module.exports = async (api, options, rootOptions) => {
               overwrite: true
             });
           }
-          // move assets directory from ./src/assets to ./app/assets
-          fs.moveSync('./src/assets', genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'assets', { overwrite: true });
         } catch (err) {
           throw err;
         }
@@ -354,9 +298,17 @@ module.exports = async (api, options, rootOptions) => {
         fs.remove('./public', (err) => {
           if (err) throw err;
         });
+        // rename main.native.js to main.js
+        fs.moveSync(
+          genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'main.native' + genConfig.jsOrTs,
+          genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'main' + genConfig.jsOrTs,
+          {
+            overwrite: true
+          }
+        );
+
+        nativeOnlyPackageJsonSetup(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'package.json');
       }
-      //} else if (options.isNewProject && options.isNVW) {
-      // don't do anything yet
     } else if (!options.isNewProject) {
       // copy type files from ./src to ./ns-example
       if (api.hasPlugin('typescript')) {
@@ -369,7 +321,7 @@ module.exports = async (api, options, rootOptions) => {
         });
       }
 
-      if (options.isNativeOrDual === 'native') {
+      if (options.isNativeOnly) {
         // move store.js file from ./src to ./ns-example/app
         if (api.hasPlugin('vuex')) {
           fs.copy('./src/store' + genConfig.jsOrTs, genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'store' + genConfig.jsOrTs, (err) => {
@@ -377,10 +329,16 @@ module.exports = async (api, options, rootOptions) => {
           });
         }
 
-        // copy assets directory from ./src/assets to ./ns-example/app/assets
-        fs.copy('./src/assets', genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'assets', (err) => {
-          if (err) throw err;
-        });
+        // rename main.native.js to main.js
+        fs.moveSync(
+          genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'main.native' + genConfig.jsOrTs,
+          genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'main' + genConfig.jsOrTs,
+          {
+            overwrite: true
+          }
+        );
+
+        nativeOnlyPackageJsonSetup(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'package.json');
       }
     } else {
       // nothing to do here
@@ -409,18 +367,13 @@ const vueRouterSetup = (module.exports.vueRouterSetup = async (api, filePathPref
 const vuexSetup = (module.exports.vuexSetup = async (api, options, filePathPrefix, jsOrTs, nativeAppPathModifier) => {
   try {
     if (api.hasPlugin('vuex')) {
-      if (options.isNativeOrDual === 'dual') {
+      if (!options.isNativeOnly) {
         api.injectImports(filePathPrefix.replace(/.\//, '') + 'src/main' + jsOrTs, `import store from './store';`);
         api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'src/main' + jsOrTs, `store`);
 
         // if we're using Nativescript-Vue-Web, then we have to modify the main.native file
-        if (options.isNVW) {
-          api.injectImports(filePathPrefix.replace(/.\//, '') + 'src/main.native' + jsOrTs, `import store from './store';`);
-          api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'src/main.native' + jsOrTs, `store`);
-        } else {
-          api.injectImports(filePathPrefix.replace(/.\//, '') + nativeAppPathModifier + 'main' + jsOrTs, `import store from 'src/store';`);
-          api.injectRootOptions(filePathPrefix.replace(/.\//, '') + nativeAppPathModifier + 'main' + jsOrTs, `store`);
-        }
+        api.injectImports(filePathPrefix.replace(/.\//, '') + 'src/main.native' + jsOrTs, `import store from './store';`);
+        api.injectRootOptions(filePathPrefix.replace(/.\//, '') + 'src/main.native' + jsOrTs, `store`);
       } else {
         // if it's native only, it will not do anything in /src directory
         api.injectImports(filePathPrefix.replace(/.\//, '') + nativeAppPathModifier + 'main' + jsOrTs, `import store from './store';`);
@@ -513,7 +466,7 @@ const writeRootFiles = (module.exports.writeRootFiles = async (api, options, fil
     );
 
     // only write these out if we are also developing for the web
-    if (options.isNativeOrDual === 'dual') {
+    if (!options.isNativeOnly) {
       console.log('dual components env files');
       const envDevelopmentWeb = 'NODE_ENV=development' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
       const envProductionWeb = 'NODE_ENV=production' + newline + 'VUE_APP_PLATFORM=web' + newline + 'VUE_APP_MODE=web';
@@ -631,6 +584,38 @@ const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsco
 });
 
 // setup tslintSetup
+const nativeOnlyPackageJsonSetup = (module.exports.nativeOnlyPackageJsonSetup = async (filePath) => {
+  let fileContents = '';
+
+  try {
+    if (fs.existsSync(filePath)) {
+      fileContents = JSON.parse(
+        fs.readFileSync(filePath, {
+          encoding: 'utf8'
+        })
+      );
+    } else {
+      return;
+    }
+
+    fileContents.main = 'main';
+
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify(fileContents, null, 2),
+      {
+        encoding: 'utf8'
+      },
+      (err) => {
+        if (err) console.error(err);
+      }
+    );
+  } catch (err) {
+    throw err;
+  }
+});
+
+// setup tslintSetup
 const tslintSetup = (module.exports.tslintSetup = async (dirPathPrefix, tslintPath, tsExclusionArray) => {
   let tslintContent = '';
 
@@ -647,7 +632,6 @@ const tslintSetup = (module.exports.tslintSetup = async (dirPathPrefix, tslintPa
 
     // create arrays if they aren't already in tslint.json
     if (tslintContent.linterOptions.exclude === undefined) tslintContent.linterOptions.exclude = new Array();
-
     if (tslintContent.exclude === undefined) tslintContent.exclude = new Array();
 
     // add items into exclude arrays, but only if they don't already exist
@@ -675,62 +659,59 @@ const tslintSetup = (module.exports.tslintSetup = async (dirPathPrefix, tslintPa
 // setup tsconfig for native only projects
 const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPrefix, nativeAppPathModifier) => {
   try {
-    if (options.isNativeOrDual === 'native') {
-      // setup the abilty to edit the tsconfig.native.json file in the root of the project
-      let appTsConfigContent = '';
-      let appTsConfigPath = path.join(dirPathPrefix, 'tsconfig.native.json');
+    // setup the abilty to edit the tsconfig.json file in the root of the project
+    let tsConfigContent = '';
+    let tsConfigPath = path.join(dirPathPrefix, 'tsconfig.json');
 
-      if (fs.existsSync(appTsConfigPath)) {
-        appTsConfigContent = fs.readJsonSync(appTsConfigPath, {
-          encoding: 'utf8'
-        });
-      } else {
-        return;
-      }
+    if (fs.existsSync(tsConfigPath)) {
+      tsConfigContent = fs.readJsonSync(tsConfigPath, {
+        encoding: 'utf8'
+      });
+    } else {
+      return;
+    }
 
-      // edit some of the options in tsconfig.native.json
-      delete appTsConfigContent.compilerOptions.paths['src/*'];
-      appTsConfigContent.compilerOptions.paths['assets/*'] = [nativeAppPathModifier + 'assets/*'];
-      appTsConfigContent.compilerOptions.paths['fonts/*'] = [nativeAppPathModifier + 'fonts/*'];
-      appTsConfigContent.compilerOptions.paths['components/*'] = [nativeAppPathModifier + 'components/*'];
+    tsConfigContent.compilerOptions.noImplicitAny = false;
+    // // // tsConfigContent.compilerOptions.types = [];
+
+    // edit some of the options in compilerOptions.paths object array
+    tsConfigContent.compilerOptions.paths['@/*'] = [nativeAppPathModifier + '*'];
+    tsConfigContent.compilerOptions.paths['assets/*'] = [nativeAppPathModifier + 'assets/*'];
+    tsConfigContent.compilerOptions.paths['fonts/*'] = [nativeAppPathModifier + 'fonts/*'];
+    tsConfigContent.compilerOptions.paths['components/*'] = [nativeAppPathModifier + 'components/*'];
+    tsConfigContent.compilerOptions.paths['styles/*'] = [nativeAppPathModifier + 'styles/*'];
+
+    // add the types directory into the config
+    if (!tsConfigContent.include.includes('types/**/*.d.ts')) tsConfigContent.include.push('types/**/*.d.ts');
+
+    // add items into the include array
+    if (!tsConfigContent.include.includes(nativeAppPathModifier + '**/*.ts')) tsConfigContent.include.push(nativeAppPathModifier + '**/*.ts');
+    if (!tsConfigContent.include.includes(nativeAppPathModifier + '**/*.tsx')) tsConfigContent.include.push(nativeAppPathModifier + '**/*.tsx');
+    if (!tsConfigContent.include.includes(nativeAppPathModifier + '**/*.vue')) tsConfigContent.include.push(nativeAppPathModifier + '**/*.vue');
+
+    // add unit test directories into include array
+    if (fs.existsSync(path.join(dirPathPrefix, 'tests'))) {
+      if (!tsConfigContent.include.includes('tests/**/*.ts')) tsConfigContent.include.push('tests/**/*.ts');
+      if (!tsConfigContent.include.includes('tests/**/*.tsx')) tsConfigContent.include.push('tests/**/*.tsx');
+    }
+
+    if (options.isNativeOnly) {
+      // edit some of the options in compilerOptions.paths object array
+      tsConfigContent.compilerOptions.paths['src/*'] = [nativeAppPathModifier + '*'];
 
       // remove some items from the include array
-      appTsConfigContent.include = await removeFromArray(appTsConfigContent.include, 'src/components/**/*.ts');
-      appTsConfigContent.include = await removeFromArray(appTsConfigContent.include, 'src/components/**/*.tsx');
-      appTsConfigContent.include = await removeFromArray(appTsConfigContent.include, 'src/components/**/*.vue');
+      tsConfigContent.include = await removeFromArray(tsConfigContent.include, 'src/**/*.ts');
+      tsConfigContent.include = await removeFromArray(tsConfigContent.include, 'src/**/*.tsx');
+      tsConfigContent.include = await removeFromArray(tsConfigContent.include, 'src/**/*.vue');
 
-      // add unit test directories into include array
-      if (fs.existsSync(path.join(dirPathPrefix, 'tests'))) {
-        if (!appTsConfigContent.include.includes('tests/**/*.ts')) appTsConfigContent.include.push('tests/**/*.ts');
-        if (!appTsConfigContent.include.includes('tests/**/*.tsx')) appTsConfigContent.include.push('tests/**/*.tsx');
-      }
-
-      fs.writeJsonSync(appTsConfigPath, appTsConfigContent, {
+      fs.writeJsonSync(tsConfigPath, tsConfigContent, {
         spaces: 2,
         encoding: 'utf8'
       });
     } else {
-      // setup the abilty to edit the tsconfig.web.json file in the root of the project
-      let srcTsConfigContent = '';
-      let srcTsConfigPath = path.join(dirPathPrefix, 'src', 'tsconfig.web.json');
-      if (fs.existsSync(srcTsConfigPath)) {
-        srcTsConfigContent = fs.readJsonSync(srcTsConfigPath, {
-          encoding: 'utf8'
-        });
-      } else {
-        return;
-      }
+      tsConfigContent.compilerOptions.paths['src/*'] = [nativeAppPathModifier + '*'];
 
-      // exclude the app directory
-      if (!srcTsConfigContent.exclude.includes('app')) srcTsConfigContent.exclude.push('app');
-
-      // add unit test directories into include array
-      if (fs.existsSync(path.join(dirPathPrefix, 'tests'))) {
-        if (!srcTsConfigContent.include.includes('tests/**/*.ts')) srcTsConfigContent.include.push('tests/**/*.ts');
-        if (!srcTsConfigContent.include.includes('tests/**/*.tsx')) srcTsConfigContent.include.push('tests/**/*.tsx');
-      }
-
-      fs.writeJsonSync(srcTsConfigPath, srcTsConfigContent, {
+      fs.writeJsonSync(tsConfigPath, tsConfigContent, {
         spaces: 2,
         encoding: 'utf8'
       });
@@ -768,6 +749,7 @@ const renderFilesIndividually = (module.exports.renderFilesIndividually = async 
     for (let file of files) {
       let newFile = file;
 
+      // renames .js files to .ts
       if (file.slice(-3) === '.js' || file.slice(-3) === '.ts') newFile = file.substring(0, file.length - 3) + jsOrTs;
 
       if ((!api.hasPlugin('typescript') && file !== 'tsconfig.json') || api.hasPlugin('typescript'))
@@ -786,7 +768,7 @@ const renderFilesIndividually = (module.exports.renderFilesIndividually = async 
 // function lacks a simple directory in and directory out option.  So, we have to get the contents
 // of the passed in directory and then render each file individually to where we want it via
 // the render function's isObject(source) option that we use in our renderFilesIndividually function.
-const renderDirectory = (module.exports.renderDirectory = async (api, options, jsOrTs, commonRenderOptions, srcPathPrefix, destPathPrefix) => {
+const renderDirectory = (module.exports.renderDirectory = async (api, options, rootOptions, jsOrTs, commonRenderOptions, srcPathPrefix, destPathPrefix) => {
   try {
     const baseDir = await extractCallDir();
     const source = path.resolve(baseDir, srcPathPrefix);
@@ -798,17 +780,47 @@ const renderDirectory = (module.exports.renderDirectory = async (api, options, j
     });
 
     for (const rawPath of _files) {
-      // let filename = path.basename(rawPath);
-      // // dotfiles are ignored when published to npm, therefore in templates
-      // // we need to use underscore instead (e.g. "_gitignore")
-      // if (filename.charAt(0) === '_' && filename.charAt(1) !== '_') {
-      // 	filename = `.${filename.slice(1)}`;
-      // }
-      // if (filename.charAt(0) === '_' && filename.charAt(1) === '_') {
-      // 	filename = `${filename.slice(1)}`;
-      // }
+      // // // let filename = path.basename(rawPath);
+      // // // // dotfiles are ignored when published to npm, therefore in templates
+      // // // // we need to use underscore instead (e.g. "_gitignore")
+      // // // if (filename.charAt(0) === '_' && filename.charAt(1) !== '_') {
+      // // // 	filename = `.${filename.slice(1)}`;
+      // // // }
+      // // // if (filename.charAt(0) === '_' && filename.charAt(1) === '_') {
+      // // // 	filename = `${filename.slice(1)}`;
+      // // // }
 
-      files.push(rawPath);
+      // only import styles based on the type of preprocessor you do or do not have.
+      // Essentially acts as filter as you iterate through the list of files in a directory structure
+      if (
+        rawPath.slice(-4) == '.css' ||
+        rawPath.slice(-5) == '.scss' ||
+        rawPath.slice(-5) == '.sass' ||
+        rawPath.slice(-5) == '.less' ||
+        rawPath.slice(-5) == '.styl' ||
+        rawPath.slice(-7) == '.stylus'
+      ) {
+        if (rootOptions.cssPreprocessor) {
+          switch (rootOptions.cssPreprocessor) {
+            case 'scss':
+              if (rawPath.slice(-5) == '.scss' || rawPath.slice(-5) == '.sass') files.push(rawPath);
+              break;
+            case 'sass':
+              if (rawPath.slice(-5) == '.scss' || rawPath.slice(-5) == '.sass') files.push(rawPath);
+              break;
+            case 'less':
+              if (rawPath.slice(-5) == '.less') files.push(rawPath);
+              break;
+            case 'stylus':
+              if (rawPath.slice(-5) == '.styl' || rawPath.slice(-7) == '.stylus') files.push(rawPath);
+              break;
+          }
+        } else {
+          if (rawPath.slice(-4) == '.css') files.push(rawPath);
+        }
+      } else {
+        files.push(rawPath);
+      }
     }
 
     renderFilesIndividually(api, options, jsOrTs, files, commonRenderOptions, srcPathPrefix, destPathPrefix);

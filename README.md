@@ -4,6 +4,76 @@ Nativescript-Vue Plugin for [vue-cli@3.0](https://github.com/vuejs/vue-cli)
 
 This plugin will integrate [Nativescript-Vue](https://nativescript-vue.org/) into new and existing Vue projects.  Additionally, it will allow for the choice of developing for Native only environments or Native __and__ Web environments under a single project structure.  In addition, choosing to integrate [Nativescript-Vue-Web](https://github.com/Nativescript-Vue-Web/Nativescript-Vue-Web), will allow for the development of Web components with a NativeScript-Vue like syntax that has the benefit of allowing for the sharing of components between the Native and Web sides of the project.  This helps reduce the amount of code, maintenence needs, and the amount of time needed for development activities.
 
+## Sharing logic in a single Web and Native capable component
+The key feature of this plugin is that it will allow you to compose SFC's that contain both Web and Native structures in them. If your component has exactly the same logic (`<script>` block) but you want different templates for web and native, you can use the special `<template web>` and `<template native>`. Also, if you need define different styles you can use `<style web>` and `<style native>`.
+
+An example of this would be the following Vue component:
+
+```
+<template web>
+  <div class="w-page">
+    <div class="w-container">
+      <img src="~/assets/logo.png" alt="logo" height="20%" width="20%">
+      <HelloWorld :msg="msg"/>
+    </div>
+  </div>
+</template>
+<template native>
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+      <HelloWorld :msg="msg"/>
+    </GridLayout>
+  </Page>
+</template>
+<script>
+  import HelloWorld from '~/components/HelloWorld';
+  export default {
+    components: {
+      HelloWorld,
+    },
+    data() {
+      return {
+        navbarTitle: `App.${appMode}.vue`,
+        msg: `Mode=${appMode} and Platform=${process.env.VUE_APP_PLATFORM}`,
+      };
+    },
+  }
+</script>
+<style web>
+ w-page {
+   padding: 1rem;
+ }
+</style>
+<style native>
+ ActionBar {
+   color: red;
+ }
+</style>
+```
+
+### Optional Seperation of concerns for Web and Native SFC's
+If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss` and `.css` files. 
+
+| File Type  | Android __and__ IOS | Android only    | IOS only        | Web only        |
+| ---------- | ------------------- | --------------- | --------------- | --------------- |
+| vue        | *.native.vue        | *.android.vue   | *.ios.vue       | *.vue           |   
+| js         | *.native.js         | *.android.js    | *.ios.js        | *.js            |
+| ts         | *.native.ts         | *.android.ts    | *.ios.ts        | *.ts            |
+| scss       | *.native.scss       | *.android.scss  | *.ios.scss      | *.scss          |
+| css        | *.native.css        | *.android.css   | *.ios.css       | *.css           |
+
+Webpack will handle figuring out which files to include based on the `npm run` command syntax you pass in.  You can also mix and match this file naming schema with the `web` or `native` tag options mentioned above.
+
+At `serve` or `build` in conjunction with the mode such as `android` or `ios`, Webpack will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when you are working with `ios` and will ignore `*.android.vue` files. 
+
+This will allow you to develop generic native components under the `*.native.vue` file extension, but in special cases, it may require you to do platform specific components, core logic and styling.  Use the corrosponding file extension to allow this to happen.
+
+If you are building for web, then just `*.vue` will work and if you are building for a Native __only__ project, then `*.vue` will work as well as the previous options mentioned.
+
+## Sharing components and assets between Native and Web SFC's
+If you want to use common components and assets between `web`, `android` and `ios`, you can do that.    For `assets`, place them in `src/assets` and for components, place them in `src/components`.  At compile time, assets will be copied to the output directory's `assets` folder and can be universally accessed across environments via something like `~/assets/logo.png`.  For components, they can be universally accessed via something similar to `components/HelloWorld`.
+
 ## Install
 
 If vue-cli 3 is not yet installed, first follow the instructions here: https://github.com/vuejs/vue-cli
@@ -36,11 +106,9 @@ vue invoke vue-cli-plugin-nativescript-vue
     * By default, the plugin will assume you want to develop for the Web and Native environments within the same project.  As such, there will be two sides to the project where web environments will be actively developed within `/src` and Native environments will be developed within `/app` unless you choose to integrate `Nativescript-Vue-Web` and all files will be placed in `/src`.
     * Warning: Choosing to develop for Native only will move the main entry point of the project and development folder to `/app`, it will copy the necessary files and then delete `/src`.
     * By choosing `Dual`, you will be able to bring your own component framework into the web portion of the project.  `NativeScript-Vue` [cannot use vue-router](https://nativescript-vue.org/en/docs/routing/vue-router/) currently, so you will have to provide your own manual routing.  The templated options deployed with the plugin will show how to do basic manual routing.
-5.  Use [Nativescript-Vue-Web](https://github.com/Nativescript-Vue-Web/Nativescript-Vue-Web) to develop web components with `Nativescript-Vue` syntax? (Default: No)
-    * This prompt should only appear if you have chosen to develop in the Dual Web and Native environments.
-    * By chosing `Yes. Use Nativescript-Vue-Web component framework`, it will effecively integrate a web component framework that will allow you to develop components that can be used in the Web and Native side of the project.  It uses `NativeScript-Vue` like syntax on components which will allow for the sharing of components between NativeScript and Web.
-6.  What type of template do you want to start with? (Default: Simple)
+5.  What type of template do you want to start with? (Default: Simple)
     * Simple is just a simple setup with a header and basic routing.
+    * [Nativescript-Vue-Web](https://github.com/Nativescript-Vue-Web/Nativescript-Vue-Web) - The Simple template, but with NS-Vue like syntax for web components.  This option should only appear if you have chosen to develop in the Dual Web and Native environments. This option will effecively integrate a web component framework that will allow you to develop components that can be used in the Web and Native side of the project.  It uses `NativeScript-Vue` like syntax on components which will allow for the sharing of components between NativeScript and Web.
     * Sidebar (currently disabled), will allow you to start with a project that includes a fixed header and pop-out sidebar menu.
     * We expect to add more templates in the future as use cases come up.
 
@@ -63,7 +131,7 @@ You will have the standard options for debugging available to you as you would w
 
 You should then be able to attach the Chrome debugger as you normally would via the [NativeScript docs](https://docs.nativescript.org/angular/tooling/debugging/chrome-devtools).
 
-You should also be able to debug directly in VSCode.  The [NativeScript VSCode Extension docs](https://docs.nativescript.org/angular/tooling/visual-studio-code-extension) are a good place to start with understanding how to do this.  However, you will need to modify your `launch.json` file to force `tns` to work properly with VUE CLI 3.  
+You should also be able to debug directly in VSCode.  The [NativeScript VSCode Extension docs](https://docs.nativescript.org/angular/tooling/visual-studio-code-extension) are a good place to start with understanding how to do this.  However, you will need to modify your `launch.json` file to force `tns` to work properly with VUE CLI 3.
 
 Your `launch.json` file should look something like below. Notice the different in the `tnsArgs` line that is different than what is in the documentation link above.
 ```
@@ -172,15 +240,3 @@ Prebuilt in the webpack config are several aliases that you can use.  Here is a 
 
 ## For TypeScript enabled projects
 If your CLI 3 project has TypeScript enabled, then the plugin will attempt to give you a very basic TypeScript version of the template you choose.  When you invoke the plugin and the template generator makes changes, you will notice the `*.d.ts` files that are usually in `src` will be moved to `/types`.  The plugin's webpack integration will ensure these files are referenced correctly at compile and runtimes.
-
-There will also be additional `tsconfig.json` files added into the root that allow for specific configurations depending on the type of environment you are building for.  You will see a `tsconfig.web.json` and a `tsconfig.native.json` file that extend the base `tsconfig.json` file in root.  The plugin's webpack integration will ensure the correct `tsconfig` file is referenced at runtime.
-
-## For Native environment development
-It should be noted that the plugin will give you the ability to develop generic SFC's (\*.native.vue) to be used in both Android and IOS, or if you need to differentiate between Android (\*.android.vue) and IOS (\*.ios.vue) then you can change the SFC's extension to map to the environment you choose.
-
-At `serve` or `build` in conjunction with the mode such as `android` or `ios`, it will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when your are doing the same for `ios` and will ignore `*.android.vue` files.
-
-This will allow you to develop generic native components under the `*.native.vue` file extension, but in special cases, it may require you to do platform specific components.  Use the corrosponding file extension to allow this to happen.
-
-## Sharing components and assets between environments
-If you want to use common components and assets between `web`, `android` and `ios`, you can do that.  Based on directory structures and webpack aliases setup by the plugin, it is __highly__ suggested you place these common items in the `src` folder directory structure.  For `assets`, place them in `src/assets` and for components, place them in `src/components`.  At compile time, assets will be copied to the output directory's `assets` folder and can be universally accessed across environments via something like `~/assets/logo.png`.  For components, they can be universally accessed via something similar to `components/HelloWorld`.
