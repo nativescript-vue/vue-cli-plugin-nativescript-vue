@@ -52,7 +52,7 @@ An example of this would be the following Vue component:
 </style>
 ```
 
-### Optional Seperation of concerns for Web and Native SFC's
+### Optional Separation of concerns for Web and Native SFC's
 If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss` and `.css` files. 
 
 | File Type  | Android __and__ IOS | Android only    | IOS only        | Web only        |

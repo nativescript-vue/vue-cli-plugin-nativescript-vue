@@ -132,11 +132,6 @@ module.exports = async (api, options, rootOptions) => {
         }
       });
     }
-
-    // lint and fix files after creation is completed
-    api.onCreateComplete(() => {
-      return require('../lib/tslint')({}, api, true);
-    });
   }
 
   // if the project is using babel, then load appropriate packages
@@ -253,7 +248,10 @@ module.exports = async (api, options, rootOptions) => {
     nsconfigSetup(genConfig.dirPathPrefix, api.resolve('nsconfig.json'), genConfig.nativeAppPathModifier, genConfig.appResourcesPathModifier);
 
     if (api.hasPlugin('typescript')) {
-      tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
+      if (fs.existsSync(api.resolve('tslint.json'))) {
+        require('../lib/tslint')({}, api, true);
+        tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
+      }
 
       // we need to edit the tsconfig.json file in /app
       // for a Native only project to remove references to /src
