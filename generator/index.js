@@ -187,7 +187,7 @@ module.exports = async (api, options, rootOptions) => {
   // render App_Resources folder
   api.render(async () => {
     // eslint-disable-next-line prettier/prettier
-    await renderDirectory(
+    await renderDirectoryStructure(
       api,
       options,
       rootOptions,
@@ -202,7 +202,7 @@ module.exports = async (api, options, rootOptions) => {
   if (!options.isNativeOnly) {
     api.render(async () => {
       // render src directory
-      await renderDirectory(
+      await renderDirectoryStructure(
         api,
         options,
         rootOptions,
@@ -222,7 +222,7 @@ module.exports = async (api, options, rootOptions) => {
     // Is Native Only
     api.render(async () => {
       // render app directory
-      await renderDirectory(
+      await renderDirectoryStructure(
         api,
         options,
         rootOptions,
@@ -246,6 +246,11 @@ module.exports = async (api, options, rootOptions) => {
 
     // create nsconfig.json in ./ or ./ns-example
     nsconfigSetup(genConfig.dirPathPrefix, api.resolve('nsconfig.json'), genConfig.nativeAppPathModifier, genConfig.appResourcesPathModifier);
+
+    // copy over .vue with native.vue files
+    if (options.isNativeOnly) {
+      nativeOnlyRenameFiles(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier.slice(0, -1));
+    }
 
     if (api.hasPlugin('typescript')) {
       if (fs.existsSync(api.resolve('tslint.json'))) {
@@ -581,6 +586,53 @@ const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsco
   }
 });
 
+// can be used to strip out template tags in native only project
+// currently unused in preference for EJS templating
+// eslint-disable-next-line no-unused-vars
+const stripTemplateTags = (module.exports.stripTemplateTags = async (srcPathPrefix) => {
+  try {
+    const files = await getAllFilesInDirStructure(srcPathPrefix, '');
+
+    for (const file of files) {
+      if (file.slice(-4) == '.vue') {
+        const options = {
+          files: path.join(srcPathPrefix, file),
+          from: [
+            new RegExp(`^((<template)(.+\\bweb\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/template>)`, `gim`),
+            new RegExp(`^((<template)(.+\\bnative\\b))([\\s\\S]*?>)`, `gim`)
+          ],
+          to: ['', '<template>']
+        };
+
+        await replaceInFile(options);
+      }
+    }
+  } catch (err) {
+    throw err;
+  }
+});
+
+const nativeOnlyRenameFiles = (module.exports.nativeOnlyRenameFiles = async (srcPathPrefix) => {
+  try {
+    const _files = await getAllFilesInDirStructure(srcPathPrefix, '');
+    const files = new Array();
+    const match = '.native.vue';
+
+    for (const file of _files) {
+      if (file.slice(-11) == match) {
+        files.push(path.join(srcPathPrefix, file));
+      }
+    }
+
+    for (const file of files) {
+      const oldFile = file.replace(match, '.vue');
+      fs.moveSync(file, oldFile, { overwrite: true });
+    }
+  } catch (err) {
+    throw err;
+  }
+});
+
 // setup tslintSetup
 const nativeOnlyPackageJsonSetup = (module.exports.nativeOnlyPackageJsonSetup = async (filePath) => {
   let fileContents = '';
@@ -719,17 +771,6 @@ const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPre
   }
 });
 
-// extract callsite file location using error stack
-const extractCallDir = (module.exports.extractCallDir = () => {
-  try {
-    const obj = {};
-    Error.captureStackTrace(obj);
-    return path.dirname(obj.stack.split('\n')[3].match(/\s\((.*):\d+:\d+\)$/)[1]);
-  } catch (err) {
-    throw err;
-  }
-});
-
 // Use the generator's render function to render individual files passed in from an array.
 // Will iterate through the array and then construct and object that is passed to render()
 const renderFilesIndividually = (module.exports.renderFilesIndividually = async (
@@ -766,16 +807,22 @@ const renderFilesIndividually = (module.exports.renderFilesIndividually = async 
 // function lacks a simple directory in and directory out option.  So, we have to get the contents
 // of the passed in directory and then render each file individually to where we want it via
 // the render function's isObject(source) option that we use in our renderFilesIndividually function.
-const renderDirectory = (module.exports.renderDirectory = async (api, options, rootOptions, jsOrTs, commonRenderOptions, srcPathPrefix, destPathPrefix) => {
-  try {
-    const baseDir = await extractCallDir();
-    const source = path.resolve(baseDir, srcPathPrefix);
-    const files = new Array();
 
-    const globby = require('globby');
-    const _files = await globby(['**/*'], {
-      cwd: source
-    });
+// eslint-disable-next-line prettier/prettier
+// eslint-disable-next-line max-len
+const renderDirectoryStructure = (module.exports.renderDirectoryStructure = async (
+  api,
+  options,
+  rootOptions,
+  jsOrTs,
+  commonRenderOptions,
+  srcPathPrefix,
+  destPathPrefix
+) => {
+  try {
+    const files = new Array();
+    const baseDir = await extractCallDir()
+    const _files = await getAllFilesInDirStructure(srcPathPrefix, baseDir);
 
     for (const rawPath of _files) {
       // // // let filename = path.basename(rawPath);
@@ -820,10 +867,45 @@ const renderDirectory = (module.exports.renderDirectory = async (api, options, r
         files.push(rawPath);
       }
     }
-
     renderFilesIndividually(api, options, jsOrTs, files, commonRenderOptions, srcPathPrefix, destPathPrefix);
   } catch (err) {
     throw err;
+  }
+});
+
+// extract callsite file location using error stack
+const extractCallDir = (module.exports.extractCallDir = () => {
+  try {
+    const obj = {};
+    Error.captureStackTrace(obj);
+    return path.dirname(obj.stack.split('\n')[3].match(/\s\((.*):\d+:\d+\)$/)[1]);
+  } catch (err) {
+    throw err;
+  }
+});
+
+// utility function used to get all the files in a directory structure.  is recursive in nature due to globby
+const getAllFilesInDirStructure = (module.exports.replaceInFile = async (srcPathPrefix, baseDir) => {
+  try {
+    const source = path.resolve(baseDir, srcPathPrefix);
+    const globby = require('globby');
+    const _files = await globby(['**/*'], {
+      cwd: source
+    });
+
+    return _files;
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// utility function used to remove sections of strings from files
+const replaceInFile = (module.exports.replaceInFile = async (options) => {
+  try {
+    //const changes = 
+    await replace(options);
+  } catch (error) {
+    console.error('Error occurred:', error);
   }
 });
 

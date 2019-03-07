@@ -1,6 +1,6 @@
 {
   "name": "vue-cli-plugin-nativescript-vue",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A vue cli 3.x plugin for NativeScript-Vue",
   "main": "index.js",
   "files": [

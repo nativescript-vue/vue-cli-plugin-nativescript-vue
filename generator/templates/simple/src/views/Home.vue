@@ -1,3 +1,4 @@
+<%_   if (!options.isNativeOnly) { _%>
 <template web>
   <div class="w-page">
     <div class="w-container">
@@ -7,6 +8,9 @@
   </div>
 </template>
 <template native>
+<%_   } else { _%>
+<template>
+<%_   } _%>
   <Page>
     <ActionBar :title="navbarTitle"/>
     <GridLayout rows="auto, auto">

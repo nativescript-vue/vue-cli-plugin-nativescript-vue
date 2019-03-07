@@ -1,10 +1,14 @@
 <%_ if (rootOptions.router) { _%>
 <%# -------------------- IS Using vue-router  -------------------- -%>
+<%_   if (!options.isNativeOnly) { _%>
 <template web></template>
+<%_   } _%>
 <template native></template>
 <%_ } else { _%>
 <%# -------------------- IS NOT Using vue-router  -------------------- -%>
+<%_   if (!options.isNativeOnly) { _%>
 <template web></template>
+<%_   } _%>
 <template native></template>
 <%_ } _%>
 <%_ if (!usingTS && rootOptions.router) { _%>
