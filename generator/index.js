@@ -821,7 +821,7 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
 ) => {
   try {
     const files = new Array();
-    const baseDir = await extractCallDir()
+    const baseDir = await extractCallDir();
     const _files = await getAllFilesInDirStructure(srcPathPrefix, baseDir);
 
     for (const rawPath of _files) {
@@ -902,7 +902,6 @@ const getAllFilesInDirStructure = (module.exports.replaceInFile = async (srcPath
 // utility function used to remove sections of strings from files
 const replaceInFile = (module.exports.replaceInFile = async (options) => {
   try {
-    //const changes = 
     await replace(options);
   } catch (error) {
     console.error('Error occurred:', error);

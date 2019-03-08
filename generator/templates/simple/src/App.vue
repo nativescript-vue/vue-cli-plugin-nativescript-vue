@@ -10,7 +10,8 @@
     </nav>
     <div class="w-container">
       <router-link tag="button" class="w-button" id="homeButton" to="/">Home</router-link>
-      <router-link tag="button" class="w-button" id="aboutButton" to="/about">About</router-link>
+      <!-- alternate way to route manually and use the same method as native -->
+      <button class="w-button" id="aboutButton" v-on:click="goToAboutPage">About</button>
       <router-view/>
     </div>
   </div>
@@ -62,6 +63,8 @@
 
 <%_   if (!rootOptions.router) { _%>
   const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
+<%_   } else { _%>
+  const { VUE_APP_MODE } = process.env;
 <%_   } _%>
 
   export default {
@@ -84,7 +87,7 @@
         this.$navigateTo(Home);
       },
       goToAboutPage() {
-        this.$navigateTo(About);
+        VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
       }
 <%_   } _%>
     }
@@ -101,9 +104,11 @@
   import About from '~/views/About.vue';
 <%_ } _%>
 
-<%_ if (!rootOptions.router) { _%>
+<%_   if (!rootOptions.router) { _%>
   const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
-<%_ } _%>
+<%_   } else { _%>
+  const { VUE_APP_MODE } = process.env;
+<%_   } _%>
 
   @Component({
     name: 'home',
@@ -125,7 +130,7 @@
     }
 
     public goToAboutPage() {
-      Vue.prototype.$navigateTo(About);
+      VUE_APP_MODE == 'web' ? this.$router.push('about') : Vue.prototype.$navigateTo(About);
     }
 <%_ } _%>
   }

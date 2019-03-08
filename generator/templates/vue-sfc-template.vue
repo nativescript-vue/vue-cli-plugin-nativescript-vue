@@ -2,14 +2,18 @@
 <%# -------------------- IS Using vue-router  -------------------- -%>
 <%_   if (!options.isNativeOnly) { _%>
 <template web></template>
+<template native>
+<%_   } else { _%>
+<template>
 <%_   } _%>
-<template native></template>
 <%_ } else { _%>
 <%# -------------------- IS NOT Using vue-router  -------------------- -%>
 <%_   if (!options.isNativeOnly) { _%>
 <template web></template>
+<template native>
+<%_   } else { _%>
+<template>
 <%_   } _%>
-<template native></template>
 <%_ } _%>
 <%_ if (!usingTS && rootOptions.router) { _%>
 <%# -------------------- IS NOT Using TypeScript AND IS Using vue-router  -------------------- -%>
