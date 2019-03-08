@@ -138,10 +138,10 @@ module.exports = async (api, options, rootOptions) => {
   if (api.hasPlugin('babel')) {
     api.extendPackage({
       devDependencies: {
-        '@babel/core': '^7.1.2',
-        '@babel/preset-env': '^7.1.0',
-        'babel-loader': '^8.0.4',
-        'babel-traverse': '^6.26.0'
+        '@babel/core': '^7.3.4',
+        '@babel/preset-env': '^7.3.4',
+        'babel-loader': '^8.0.5',
+        '@babel/traverse': '^7.3.4'
       }
     });
 
