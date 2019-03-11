@@ -53,41 +53,42 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '5.2.0'
+        version: '5.2.1'
       },
       'tns-android': {
-        version: '5.2.0'
+        version: '5.2.1'
       }
     },
     scripts: {
-      'build:android':
-        // eslint-disable-next-line max-len
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.android tns build android --bundle --env.production && npm run remove-webpack-config',
-      'build:ios':
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.ios tns build ios --bundle --env.production && npm run remove-webpack-config',
+      'build:android': 'npm run setup-webpack-config && tns build android --bundle --env.production && npm run remove-webpack-config',
+      'build:ios': 'npm run setup-webpack-config && tns build ios --bundle --env.production && npm run remove-webpack-config',
       'remove-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post',
-      'serve:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle --env.development',
-      'serve:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle --env.development',
+      'serve:android': 'npm run setup-webpack-config && tns run android --bundle --env.development',
+      'serve:ios': 'npm run setup-webpack-config && tns run ios --bundle --env.development',
       // 'inspect:android': 'npm run setup-webpack-config && vue inspect -- --env.android > out-android.js',
       // 'inspect:ios': 'npm run setup-webpack-config && vue inspect -- --env.ios > out-ios.js',
-      'debug:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns debug android --bundle --env.development',
-      'debug:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns debug ios --bundle --env.development',
-      'preview:android':
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.android',
-      'preview:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.ios',
-      'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre'
+      'debug:android': 'npm run setup-webpack-config && tns debug android --bundle --env.development',
+      'debug:ios': 'npm run setup-webpack-config && tns debug ios --bundle --env.development',
+      'preview:android': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.android',
+      'preview:ios': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.ios',
+      'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre',
+      'clean:platforms': 'rimraf platforms',
+      'clean:android': 'rimraf platforms/android',
+      'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
       'nativescript-vue': '^2.0.2',
       'tns-core-modules': '^5.2.1'
     },
     devDependencies: {
-      'cross-env': '^5.2.0',
       'nativescript-dev-webpack': '^0.17.0',
       'nativescript-vue-template-compiler': '^2.0.2',
       'nativescript-worker-loader': '~0.9.1',
       'node-sass': '^4.11.0',
-      'string-replace-loader': '^2.1.1'
+      'string-replace-loader': '^2.1.1',
+      rimraf: '^2.6.3',
+      webpack: '^4.29.6',
+      'webpack-cli': '^3.2.3'
     }
   });
 
@@ -95,8 +96,8 @@ module.exports = async (api, options, rootOptions) => {
   if (!options.isNativeOnly) {
     api.extendPackage({
       scripts: {
-        'serve:web': 'vue-cli-service serve --mode development.web --env.development --env.web',
-        'build:web': 'vue-cli-service build --mode production.web --env.production --env.web'
+        'serve:web': 'vue-cli-service serve --mode development.web',
+        'build:web': 'vue-cli-service build --mode production.web'
         //'inspect:web': 'npm run setup-webpack-config && vue inspect -- --env.web > out-web.js'
       }
     });
@@ -250,6 +251,13 @@ module.exports = async (api, options, rootOptions) => {
     // copy over .vue with native.vue files
     if (options.isNativeOnly) {
       nativeOnlyRenameFiles(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier.slice(0, -1));
+    }
+
+    // remove router config for projects that don't use vue-router
+    if (!rootOptions.router) {
+      fs.remove(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'router' + genConfig.jsOrTs, (err) => {
+        if (err) throw err;
+      });
     }
 
     if (api.hasPlugin('typescript')) {

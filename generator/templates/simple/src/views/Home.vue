@@ -115,7 +115,7 @@
 <%_   } _%>
 <%_ } else { _%>
 <%# -------------------- IS Using standard CSS -------------------- -%>
-<style scoped lang="scss">
+<style scoped>
   @import '~styles/style-one';
   @import '~styles/style-two';
 

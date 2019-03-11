@@ -92,7 +92,7 @@
 <%_   } _%>
 <%_ } else { _%>
 <%# -------------------- IS Using standard CSS -------------------- -%>
-<style scoped lang="scss">
+<style scoped>
   .message {
     color: #42b983;
     display: block;

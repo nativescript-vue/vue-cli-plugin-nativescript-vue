@@ -198,7 +198,7 @@
 <%_   } _%>
 <%_ } else { _%>
 <%# -------------------- IS Using standard CSS -------------------- -%>
-<style web lang="scss">
+<style web>
   @import '~styles/style-one';
 
   .w-page {
@@ -206,7 +206,7 @@
     width: 100%;
   }
 </style>
-<style native lang="scss">
+<style native>
   @import '~styles/style-one';
 </style>
 <%_ } _%>
