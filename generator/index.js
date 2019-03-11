@@ -53,7 +53,7 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '5.2.1'
+        version: '5.2.0'
       },
       'tns-android': {
         version: '5.2.1'

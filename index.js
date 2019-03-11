@@ -843,7 +843,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
       forTSPluginConfig.tsconfig = resolve(projectRoot, tsconfigFileName);
-      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'src')) ? resolve(projectRoot, 'tslint.json') : false;
+      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'tslint.json')) ? resolve(projectRoot, 'tslint.json') : false;
       forTSPluginConfig.checkSyntacticErrors = false;
 
       config.plugins.delete('fork-ts-checker').end();
@@ -1105,7 +1105,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
       forTSPluginConfig.tsconfig = resolve(projectRoot, 'tsconfig.json');
-      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'src')) ? resolve(projectRoot, 'tslint.json') : false;
+      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'tslint.json')) ? resolve(projectRoot, 'tslint.json') : false;
 
       config.plugins.delete('fork-ts-checker').end();
 
