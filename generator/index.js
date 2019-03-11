@@ -262,7 +262,10 @@ module.exports = async (api, options, rootOptions) => {
 
     if (api.hasPlugin('typescript')) {
       if (fs.existsSync(api.resolve('tslint.json'))) {
-        require('../lib/tslint')({}, api, true);
+        const baseDir = genConfig.nativeAppPathModifier;
+        require('../lib/tslint')({
+          '_': [`${baseDir}/**/*.ts`, `${baseDir}/**/*.vue`, `${baseDir}/**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
+        }, api, true);
         tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
       }
 
