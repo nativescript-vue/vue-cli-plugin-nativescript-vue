@@ -721,7 +721,7 @@ const tslintSetup = (module.exports.tslintSetup = async (dirPathPrefix, tslintPa
 // setup tsconfig for native only projects
 const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPrefix, nativeAppPathModifier) => {
   try {
-    // setup the abilty to edit the tsconfig.json file in the root of the project
+    // setup the ability to edit the tsconfig.json file in the root of the project
     let tsConfigContent = '';
     let tsConfigPath = path.join(dirPathPrefix, 'tsconfig.json');
 
@@ -735,6 +735,9 @@ const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPre
 
     tsConfigContent.compilerOptions.noImplicitAny = false;
     // // // tsConfigContent.compilerOptions.types = [];
+
+    // edit types attribute to fix build
+    tsConfigContent.compilerOptions.types = ['node'];
 
     // edit some of the options in compilerOptions.paths object array
     tsConfigContent.compilerOptions.paths['@/*'] = [nativeAppPathModifier + '*'];
