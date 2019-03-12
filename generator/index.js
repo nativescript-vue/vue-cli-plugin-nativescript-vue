@@ -238,7 +238,7 @@ module.exports = async (api, options, rootOptions) => {
     });
   }
 
-  api.onCreateComplete(() => {
+  api.onCreateComplete(async () => {
     // make changes to .gitignore
     gitignoreAdditions(api);
 
@@ -261,17 +261,17 @@ module.exports = async (api, options, rootOptions) => {
     }
 
     if (api.hasPlugin('typescript')) {
+      // we need to edit the tsconfig.json file in /app
+      // for a Native only project to remove references to /src
+      await tsconfigSetup(options, genConfig.dirPathPrefix, genConfig.nativeAppPathModifier);
+
       if (fs.existsSync(api.resolve('tslint.json'))) {
         const baseDir = genConfig.nativeAppPathModifier;
         require('../lib/tslint')({
-          '_': [`${baseDir}/**/*.ts`, `${baseDir}/**/*.vue`, `${baseDir}/**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
+          '_': [`${baseDir}**/*.ts`, `${baseDir}**/*.vue`, `${baseDir}**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
         }, api, true);
         tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
       }
-
-      // we need to edit the tsconfig.json file in /app
-      // for a Native only project to remove references to /src
-      tsconfigSetup(options, genConfig.dirPathPrefix, genConfig.nativeAppPathModifier);
     }
 
     // the main difference between New and Existing for this section is
