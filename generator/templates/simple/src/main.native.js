@@ -2,6 +2,7 @@
 extend: '@vue/cli-service/generator/template/src/main.js'
 replace:
   - !!js/regexp /import Vue from 'vue'/
+  - !!js/regexp /import App from './App.vue'/
   - !!js/regexp /Vue.config.productionTip = false/
   - !!js/regexp /h => h\(App\),/
   - !!js/regexp /}\)\.\$mount\('#app'\)/
@@ -9,6 +10,10 @@ replace:
 
 <%# REPLACE %>
 import Vue from 'nativescript-vue';
+<%# END_REPLACE %>
+
+<%# REPLACE %>
+import App from './App.vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
