@@ -11,7 +11,7 @@ const DefinePlugin = require('webpack/lib/DefinePlugin');
 // // // const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 const nativescriptTarget = require('nativescript-dev-webpack/nativescript-target');
 const NsVueTemplateCompiler = require('nativescript-vue-template-compiler');
@@ -280,10 +280,10 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
     config.optimization.minimize(Boolean(production));
     config.optimization
       .minimizer([
-        new UglifyJsPlugin({
+        new TerserPlugin({
           parallel: true,
           cache: true,
-          uglifyOptions: {
+          terserOptions: {
             output: {
               comments: false
             },
