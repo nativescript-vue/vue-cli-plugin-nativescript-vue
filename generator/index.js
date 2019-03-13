@@ -119,7 +119,7 @@ module.exports = async (api, options, rootOptions) => {
       dependencies: {},
       devDependencies: {
         'fork-ts-checker-webpack-plugin': '^0.4.15',
-        'uglifyjs-webpack-plugin': '^2.0.1'
+        'terser-webpack-plugin': '^1.2.3'
         //'tns-platform-declarations': '^4.2.1'
       }
     });
