@@ -53,11 +53,11 @@ An example of this would be the following Vue component:
 ```
 
 ### Optional Separation of concerns for Web and Native SFC's
-If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss` and `.css` files. 
+If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss` and `.css` files.
 
 | File Type  | Android __and__ IOS | Android only    | IOS only        | Web only        |
 | ---------- | ------------------- | --------------- | --------------- | --------------- |
-| vue        | *.native.vue        | *.android.vue   | *.ios.vue       | *.vue           |   
+| vue        | *.native.vue        | *.android.vue   | *.ios.vue       | *.vue           |
 | js         | *.native.js         | *.android.js    | *.ios.js        | *.js            |
 | ts         | *.native.ts         | *.android.ts    | *.ios.ts        | *.ts            |
 | scss       | *.native.scss       | *.android.scss  | *.ios.scss      | *.scss          |
@@ -65,7 +65,7 @@ If you want complete seperation of concerns between Web and Native for component
 
 Webpack will handle figuring out which files to include based on the `npm run` command syntax you pass in.  You can also mix and match this file naming schema with the `web` or `native` tag options mentioned above.
 
-At `serve` or `build` in conjunction with the mode such as `android` or `ios`, Webpack will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when you are working with `ios` and will ignore `*.android.vue` files. 
+At `serve` or `build` in conjunction with the mode such as `android` or `ios`, Webpack will filter which files are looked at.  For instance, if you do `npm run serve:android`, then it will look for `*.native.vue` and `*.android.vue` files and ignore `*.ios.vue` files entirely.  Conversely, it will do the same when you are working with `ios` and will ignore `*.android.vue` files.
 
 This will allow you to develop generic native components under the `*.native.vue` file extension, but in special cases, it may require you to do platform specific components, core logic and styling.  Use the corrosponding file extension to allow this to happen.
 
@@ -218,7 +218,7 @@ Each time the project is built or served, the plugin will copy the latest webpac
 If you'd like to see what the webpack config is doing then you can run one of the following:
 
 1. `vue inspect -- --env.android > out-android.js`
-2. `vue inspect -- --env.ios > out-android.js`
+2. `vue inspect -- --env.ios > out-ios.js`
 3. `vue inspect -- --env.web > out-web.js`
 
 These will default to showing you the Development version of the webpack config. You can pass in the `-- --env.production` option to see the Production version of the config.  Subtitute `development.android` or `production.ios`, etc to see the different configs based on the environmental variables.

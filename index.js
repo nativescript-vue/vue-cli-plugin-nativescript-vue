@@ -11,7 +11,7 @@ const DefinePlugin = require('webpack/lib/DefinePlugin');
 // // // const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 const nativescriptTarget = require('nativescript-dev-webpack/nativescript-target');
 const NsVueTemplateCompiler = require('nativescript-vue-template-compiler');
@@ -84,15 +84,30 @@ const getBlockRegex = (tag, mode) => {
 
 module.exports = (api, projectOptions) => {
   const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
+  let env = new Object();
+  let flags = new Array();
 
-  // get the --env command line options and put them in the env variable
-  const [, , ...processArgs] = process.argv;
-  const flags = [...processArgs].filter((f) => f.startsWith('--env.')).map((f) => f.substring(6));
   const addOption = (all, current) => {
     all[current] = true;
     return all;
   };
-  const env = flags.reduce(addOption, {});
+
+  // are we using the vue cli or not and if so are we passing in the correct options
+  if (api && api.service.mode && api.service.mode !== 'development') {
+    // will convert the --mode options into an array for later use
+    flags = api.service.mode.split('.');
+  } else {
+    // get the --env command line options and put them in the env variable
+    const [, , ...processArgs] = process.argv;
+    flags = [...processArgs].filter((f) => f.startsWith('--env.')).map((f) => f.substring(6));
+
+    // take advantage of the vue cli api to load the --env items into process.env.
+    // we are filtering out the items, by catching the '=' sign, brought in from nsconfig.json as those don't need loaded into process.env
+    api.service.loadEnv(flags.filter((o) => !o.includes('=')).join('.'));
+  }
+
+  // setup the traditional {N} webpack 'env' variable
+  env = flags.reduce(addOption, {});
 
   const platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
 
@@ -265,10 +280,10 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
     config.optimization.minimize(Boolean(production));
     config.optimization
       .minimizer([
-        new UglifyJsPlugin({
+        new TerserPlugin({
           parallel: true,
           cache: true,
-          uglifyOptions: {
+          terserOptions: {
             output: {
               comments: false
             },
@@ -449,7 +464,8 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
             .get('options'),
           {
             minimize: false,
-            url: false
+            url: false,
+            importLoaders: 1
           }
         )
       )
@@ -730,9 +746,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
       .plugin('define')
       .use(DefinePlugin, [
         Object.assign(config.plugin('define').get('args')[0], {
-          TNS_ENV: JSON.stringify(mode),
-          TNS_APP_PLATFORM: JSON.stringify(process.env.VUE_APP_PLATFORM),
-          TNS_APP_MODE: JSON.stringify(process.env.VUE_APP_MODE)
+          TNS_ENV: JSON.stringify(mode)
         })
       ])
       .end();
@@ -829,7 +843,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
       forTSPluginConfig.tsconfig = resolve(projectRoot, tsconfigFileName);
-      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'src')) ? resolve(projectRoot, 'tslint.json') : false;
+      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'tslint.json')) ? resolve(projectRoot, 'tslint.json') : false;
       forTSPluginConfig.checkSyntacticErrors = false;
 
       config.plugins.delete('fork-ts-checker').end();
@@ -995,18 +1009,18 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
       .options(imageLoaderOptions)
       .end();
 
-    // Define useful constants like TNS_WEBPACK
-    // Merge DefinePlugin options that come in native from CLI 3
-    config
-      .plugin('define')
-      .use(DefinePlugin, [
-        Object.assign(config.plugin('define').get('args')[0], {
-          TNS_ENV: JSON.stringify(mode),
-          TNS_APP_PLATFORM: JSON.stringify(process.env.VUE_APP_PLATFORM),
-          TNS_APP_MODE: JSON.stringify(process.env.VUE_APP_MODE)
-        })
-      ])
-      .end();
+    // // // // Define useful constants like TNS_WEBPACK
+    // // // // Merge DefinePlugin options that come in native from CLI 3
+    // // // config
+    // // //   .plugin('define')
+    // // //   .use(DefinePlugin, [
+    // // //     Object.assign(config.plugin('define').get('args')[0], {
+    // // //       TNS_ENV: JSON.stringify(mode),
+    // // //       TNS_APP_PLATFORM: JSON.stringify(process.env.VUE_APP_PLATFORM),
+    // // //       TNS_APP_MODE: JSON.stringify(process.env.VUE_APP_MODE)
+    // // //     })
+    // // //   ])
+    // // //   .end();
 
     // Remove all files from the out dir.
     config
@@ -1090,10 +1104,8 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
       // directly to edit it.
       const forTSPluginConfig = config.plugin('fork-ts-checker').get('args')[0];
 
-
-
       forTSPluginConfig.tsconfig = resolve(projectRoot, 'tsconfig.json');
-      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'src')) ? resolve(projectRoot, 'tslint.json') : false;
+      forTSPluginConfig.tslint = fs.pathExistsSync(resolve(projectRoot, 'tslint.json')) ? resolve(projectRoot, 'tslint.json') : false;
 
       config.plugins.delete('fork-ts-checker').end();
 

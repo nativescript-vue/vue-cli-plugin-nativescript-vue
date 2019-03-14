@@ -56,38 +56,39 @@ module.exports = async (api, options, rootOptions) => {
         version: '5.2.0'
       },
       'tns-android': {
-        version: '5.2.0'
+        version: '5.2.1'
       }
     },
     scripts: {
-      'build:android':
-        // eslint-disable-next-line max-len
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.android tns build android --bundle --env.production && npm run remove-webpack-config',
-      'build:ios':
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=production.ios tns build ios --bundle --env.production && npm run remove-webpack-config',
+      'build:android': 'npm run setup-webpack-config && tns build android --bundle --env.production && npm run remove-webpack-config',
+      'build:ios': 'npm run setup-webpack-config && tns build ios --bundle --env.production && npm run remove-webpack-config',
       'remove-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post',
-      'serve:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns run android --bundle --env.development',
-      'serve:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns run ios --bundle --env.development',
+      'serve:android': 'npm run setup-webpack-config && tns run android --bundle --env.development',
+      'serve:ios': 'npm run setup-webpack-config && tns run ios --bundle --env.development',
       // 'inspect:android': 'npm run setup-webpack-config && vue inspect -- --env.android > out-android.js',
       // 'inspect:ios': 'npm run setup-webpack-config && vue inspect -- --env.ios > out-ios.js',
-      'debug:android': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns debug android --bundle --env.development',
-      'debug:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.ios tns debug ios --bundle --env.development',
-      'preview:android':
-        'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.android',
-      'preview:ios': 'npm run setup-webpack-config && cross-env-shell VUE_CLI_MODE=development.android tns preview --bundle --env.development --env.ios',
-      'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre'
+      'debug:android': 'npm run setup-webpack-config && tns debug android --bundle --env.development',
+      'debug:ios': 'npm run setup-webpack-config && tns debug ios --bundle --env.development',
+      'preview:android': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.android',
+      'preview:ios': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.ios',
+      'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre',
+      'clean:platforms': 'rimraf platforms',
+      'clean:android': 'rimraf platforms/android',
+      'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
       'nativescript-vue': '^2.0.2',
       'tns-core-modules': '^5.2.1'
     },
     devDependencies: {
-      'cross-env': '^5.2.0',
       'nativescript-dev-webpack': '^0.17.0',
       'nativescript-vue-template-compiler': '^2.0.2',
       'nativescript-worker-loader': '~0.9.1',
       'node-sass': '^4.11.0',
-      'string-replace-loader': '^2.1.1'
+      'string-replace-loader': '^2.1.1',
+      rimraf: '^2.6.3',
+      webpack: '^4.29.6',
+      'webpack-cli': '^3.2.3'
     }
   });
 
@@ -95,8 +96,8 @@ module.exports = async (api, options, rootOptions) => {
   if (!options.isNativeOnly) {
     api.extendPackage({
       scripts: {
-        'serve:web': 'vue-cli-service serve --mode development.web --env.development --env.web',
-        'build:web': 'vue-cli-service build --mode production.web --env.production --env.web'
+        'serve:web': 'vue-cli-service serve --mode development.web',
+        'build:web': 'vue-cli-service build --mode production.web'
         //'inspect:web': 'npm run setup-webpack-config && vue inspect -- --env.web > out-web.js'
       }
     });
@@ -118,7 +119,7 @@ module.exports = async (api, options, rootOptions) => {
       dependencies: {},
       devDependencies: {
         'fork-ts-checker-webpack-plugin': '^0.4.15',
-        'uglifyjs-webpack-plugin': '^2.0.1'
+        'terser-webpack-plugin': '^1.2.3'
         //'tns-platform-declarations': '^4.2.1'
       }
     });
@@ -138,10 +139,10 @@ module.exports = async (api, options, rootOptions) => {
   if (api.hasPlugin('babel')) {
     api.extendPackage({
       devDependencies: {
-        '@babel/core': '^7.1.2',
-        '@babel/preset-env': '^7.1.0',
-        'babel-loader': '^8.0.4',
-        'babel-traverse': '^6.26.0'
+        '@babel/core': '^7.3.4',
+        '@babel/preset-env': '^7.3.4',
+        'babel-loader': '^8.0.5',
+        '@babel/traverse': '^7.3.4'
       }
     });
 
@@ -237,7 +238,7 @@ module.exports = async (api, options, rootOptions) => {
     });
   }
 
-  api.onCreateComplete(() => {
+  api.onCreateComplete(async () => {
     // make changes to .gitignore
     gitignoreAdditions(api);
 
@@ -252,15 +253,26 @@ module.exports = async (api, options, rootOptions) => {
       nativeOnlyRenameFiles(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier.slice(0, -1));
     }
 
-    if (api.hasPlugin('typescript')) {
-      if (fs.existsSync(api.resolve('tslint.json'))) {
-        require('../lib/tslint')({}, api, true);
-        tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
-      }
+    // remove router config for projects that don't use vue-router
+    if (!rootOptions.router) {
+      fs.remove(genConfig.dirPathPrefix + genConfig.nativeAppPathModifier + 'router' + genConfig.jsOrTs, (err) => {
+        if (err) throw err;
+      });
+    }
 
+    if (api.hasPlugin('typescript')) {
       // we need to edit the tsconfig.json file in /app
       // for a Native only project to remove references to /src
-      tsconfigSetup(options, genConfig.dirPathPrefix, genConfig.nativeAppPathModifier);
+      await tsconfigSetup(options, genConfig.dirPathPrefix, genConfig.nativeAppPathModifier);
+
+      if (fs.existsSync(api.resolve('tslint.json'))) {
+        await tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
+
+        const baseDir = genConfig.nativeAppPathModifier;
+        require('../lib/tslint')({
+          '_': [`${baseDir}**/*.ts`, `${baseDir}**/*.vue`, `${baseDir}**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
+        }, api, false);
+      }
     }
 
     // the main difference between New and Existing for this section is
@@ -709,7 +721,7 @@ const tslintSetup = (module.exports.tslintSetup = async (dirPathPrefix, tslintPa
 // setup tsconfig for native only projects
 const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPrefix, nativeAppPathModifier) => {
   try {
-    // setup the abilty to edit the tsconfig.json file in the root of the project
+    // setup the ability to edit the tsconfig.json file in the root of the project
     let tsConfigContent = '';
     let tsConfigPath = path.join(dirPathPrefix, 'tsconfig.json');
 
@@ -723,6 +735,9 @@ const tsconfigSetup = (module.exports.tsconfigSetup = async (options, dirPathPre
 
     tsConfigContent.compilerOptions.noImplicitAny = false;
     // // // tsConfigContent.compilerOptions.types = [];
+
+    // edit types attribute to fix build
+    tsConfigContent.compilerOptions.types = ['node'];
 
     // edit some of the options in compilerOptions.paths object array
     tsConfigContent.compilerOptions.paths['@/*'] = [nativeAppPathModifier + '*'];
@@ -821,7 +836,7 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
 ) => {
   try {
     const files = new Array();
-    const baseDir = await extractCallDir()
+    const baseDir = await extractCallDir();
     const _files = await getAllFilesInDirStructure(srcPathPrefix, baseDir);
 
     for (const rawPath of _files) {
@@ -902,7 +917,6 @@ const getAllFilesInDirStructure = (module.exports.replaceInFile = async (srcPath
 // utility function used to remove sections of strings from files
 const replaceInFile = (module.exports.replaceInFile = async (options) => {
   try {
-    //const changes = 
     await replace(options);
   } catch (error) {
     console.error('Error occurred:', error);
