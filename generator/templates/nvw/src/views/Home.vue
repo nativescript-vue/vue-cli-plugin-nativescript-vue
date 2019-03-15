@@ -1,16 +1,13 @@
-<%_   if (!options.isNativeOnly) { _%>
 <template web>
-  <div class="w-page">
-    <div class="w-container">
-      <img src="~/assets/logo.png" alt="logo">
-      <HelloWorld :msg="msg"/>
-    </div>
-  </div>
+  <Page>
+    <GridLayout rows="auto, auto">
+      <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+      <Img src="~/assets/logo.png" row="0" class="m-20"/>
+      <HelloWorld :msg="msg" row="1"/>
+    </GridLayout>
+  </Page>
 </template>
 <template native>
-<%_   } else { _%>
-<template>
-<%_   } _%>
   <Page>
     <ActionBar :title="navbarTitle"/>
     <GridLayout rows="auto, auto">
@@ -30,7 +27,7 @@
   export default {
     name: 'home',
     components: {
-      HelloWorld
+      HelloWorld,
     },
     data() {
       return {
@@ -56,7 +53,7 @@
     },
   })
   export default class Home extends Vue {
-    private navbarTitle: string = `Home.vue`;
+    private navbarTitle: string = 'Home.vue';
     private msg: string = `Mode=${VUE_APP_MODE} and Platform=${VUE_APP_PLATFORM}`;
   }
 
@@ -78,11 +75,14 @@
   @import '~styles/style-two';
 
   img, Image {
-    height: 20%;
-    width: 20%;
     display: block;
     margin: auto;
     margin-top: 4em;
+  }
+
+  Image {
+    height: 20%;
+    width: 20%;
   }
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'stylus') { _%>
@@ -97,6 +97,10 @@
     display block
     margin auto
     margin-top 4em
+  
+  Image
+    height 20%
+    width 20%
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'less') { _%>
 <%#   -------------------- IS Using Less -------------------- -%>
@@ -105,11 +109,14 @@
   @import '~styles/style-two';
 
   img, Image {
-    height: 20%;
-    width: 20%;
     display: block;
     margin: auto;
     margin-top: 4em;
+  }
+
+  Image {
+    height: 20%;
+    width: 20%;
   }
 </style>
 <%_   } _%>
@@ -120,11 +127,14 @@
   @import '~styles/style-two';
 
   img, Image {
-    height: 20%;
-    width: 20%;
     display: block;
     margin: auto;
     margin-top: 4em;
+  }
+
+  Image {
+    height: 20%;
+    width: 20%;
   }
 </style>
 <%_ } _%>

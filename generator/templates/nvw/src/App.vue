@@ -1,25 +1,16 @@
 <%_ if (rootOptions.router) { _%>
 <%# -------------------- IS Using vue-router  -------------------- -%>
-<%_   if (!options.isNativeOnly) { _%>
 <template web>
-  <div class="w-page">
-    <nav>
-      <ul class="w-navbar">
-        <li class="w-title" :text="navbarTitle">{{navbarTitle}}</li>
-      </ul>
-    </nav>
-    <div class="w-container">
-      <router-link tag="button" class="w-button" id="homeButton" to="/">Home</router-link>
-      <!-- alternate way to route manually and use the same method as native -->
-      <button class="w-button" id="aboutButton" v-on:click="goToAboutPage">About</button>
-      <router-view/>
-    </div>
-  </div>
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+      <Button text="Home" @tap="goToHomePage" row="0"/>
+      <Button text="About" @tap="goToAboutPage" row="1"/>
+    </GridLayout>
+    <router-view/>
+  </Page>
 </template>
 <template native>
-<%_   } else { _%>
-<template>
-<%_   } _%>
   <Page>
     <ActionBar :title="navbarTitle"/>
     <GridLayout rows="auto, auto">
@@ -30,114 +21,111 @@
 </template>
 <%_ } else { _%>
 <%# -------------------- IS NOT Using vue-router  -------------------- -%>
-<%_   if (!options.isNativeOnly) { _%>
 <template web>
-  <div class="w-page">
-    <div class="w-container">
-      <img src="~/assets/logo.png" alt="logo" height="20%" width="20%">
-      <HelloWorld :msg="msg"/>
-    </div>
-  </div>
-</template>
-<template native>
-<%_   } else { _%>
-<template>
-<%_   } _%>
   <Page>
     <ActionBar :title="navbarTitle"/>
     <GridLayout rows="auto, auto">
-      <HelloWorld :msg="msg"/>
+      <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+      <Img src="~/assets/logo.png" row="0" class="m-20"/>
+      <HelloWorld :msg="msg" row="1"/>
+    </GridLayout>
+  </Page>
+</template>
+<template native>
+  <Page>
+    <ActionBar :title="navbarTitle"/>
+    <GridLayout rows="auto, auto">
+      <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+      <Image src="~/assets/logo.png" row="0" class="m-20"/>
+      <HelloWorld :msg="msg" row="1"/>
     </GridLayout>
   </Page>
 </template>
 <%_ } _%>
-<%_ if (!usingTS) { _%>
-<%# -------------------- IS NOT Using TypeScript -------------------- -%>
+<%_ if (!usingTS && rootOptions.router) { _%>
+<%# -------------------- IS NOT Using TypeScript AND IS Using vue-router  -------------------- -%>
 <script>
-<%_   if (!rootOptions.router) { _%>
-  import HelloWorld from '~/components/HelloWorld';
-<%_   } else { _%>
   import Home from '~/views/Home';
   import About from '~/views/About';
-<%_   } _%>
 
-<%_   if (!rootOptions.router) { _%>
-  const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
-<%_   } else { _%>
   const { VUE_APP_MODE } = process.env;
-<%_   } _%>
 
   export default {
-<%_   if (!rootOptions.router) { _%>
-    components: {
-      HelloWorld,
-    },
-<%_     } _%>
     data() {
       return {
         navbarTitle: `App.vue`,
-<%_   if (!rootOptions.router) { _%>
-        msg: `Mode=${VUE_APP_MODE} and Platform=${VUE_APP_PLATFORM}`,
-<%_   } _%>
       };
     },
     methods: {
-<%_   if (rootOptions.router) { _%>
       goToHomePage() {
-        this.$navigateTo(Home);
+        VUE_APP_MODE == 'web' ? this.$router.push('/') : this.$navigateTo(Home);
       },
       goToAboutPage() {
         VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
-      }
-<%_   } _%>
-    }
+      },
+    },
+  };
+
+</script>
+<%_ } else if (!usingTS && !rootOptions.router) { _%>
+<%# -------------------- IS NOT Using TypeScript AND IS NOT Using vue-router  -------------------- -%>
+<script>
+  const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
+
+  export default {
+    data() {
+      return {
+        navbarTitle: `App.vue`,
+        msg: `Mode=${VUE_APP_MODE} and Platform=${VUE_APP_PLATFORM}`,
+      };
+    },
   };
 </script>
-<%_ } else { _%>
-<%# -------------------- IS Using TypeScript -------------------- -%>
+<%_ } else if (usingTS && rootOptions.router) { _%>
+<%# -------------------- IS Using TypeScript AND IS Using vue-router  -------------------- -%>
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
-<%_ if (!rootOptions.router) { _%>
-  import HelloWorld from '~/components/HelloWorld.vue';
-<%_ } else { _%>
-  import Home from '~/views/Home.vue';
-  import About from '~/views/About.vue';
-<%_ } _%>
+  import Home from '~/views/Home';
+  import About from '~/views/About';
 
-<%_   if (!rootOptions.router) { _%>
-  const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
-<%_   } else { _%>
   const { VUE_APP_MODE } = process.env;
-<%_   } _%>
+
+  @Component()
+  export default class App extends Vue {
+    private navbarTitle: string = `App.vue`;
+
+    private goToHomePage () {
+      VUE_APP_MODE == 'web' ? this.$router.push('/') : this.$navigateTo(Home);
+    };
+
+    private goToAboutPage () {
+      VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
+    };
+  }
+
+  </script>
+<%_ } else if (usingTS && !rootOptions.router) { _%>
+<%# -------------------- IS Using TypeScript AND IS NOT Using vue-router  -------------------- -%>
+<script lang="ts">
+  import { Component, Vue } from 'vue-property-decorator';
+  import HelloWorld from 'components/HelloWorld.vue';
+
+  const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
 
   @Component({
-    name: 'home',
-<%_ if (!rootOptions.router) { _%>
     components: {
       HelloWorld,
     },
-<%_ } _%>
   })
   export default class App extends Vue {
     private navbarTitle: string = `App.vue`;
-<%_ if (!rootOptions.router) { _%>
     private msg: string = `Mode=${VUE_APP_MODE} and Platform=${VUE_APP_PLATFORM}`;
-<%_ } _%>
-
-<%_ if (rootOptions.router) { _%>
-    public goToHomePage() {
-      Vue.prototype.$navigateTo(Home);
-    }
-
-    public goToAboutPage() {
-      VUE_APP_MODE == 'web' ? this.$router.push('about') : Vue.prototype.$navigateTo(About);
-    }
-<%_ } _%>
   }
 
 </script>
+<%_ } else { _%>
+<%# -------------------- don't do anything -------------------- -%>
 <%_ } _%>
-
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor) { _%>
 <%_   if (rootOptions.cssPreprocessor == 'sass' || rootOptions.cssPreprocessor == 'scss') { _%>
@@ -155,6 +143,10 @@
   .w-page {
     height: 100%;
     width: 100%;
+  }
+
+  .nvw-action-bar {
+    color: #42b983;
   }
 
 </style>
@@ -177,6 +169,9 @@
     height 100%
     width 100%
 
+  .nvw-action-bar 
+    color #42b983
+  
 </style>
 <style native lang="stylus">
   @import '~styles/style-one';
@@ -189,6 +184,10 @@
   .w-page {
     height: 100%;
     width: 100%;
+  }
+
+  .nvw-action-bar {
+    color: #42b983;
   }
 
 </style>
@@ -204,6 +203,10 @@
   .w-page {
     height: 100%;
     width: 100%;
+  }
+
+  .nvw-action-bar {
+    color: #42b983;
   }
 </style>
 <style native>

@@ -1,8 +1,9 @@
 <template>
-  <div>
-    <div class="message">{{msg}}</div>
-    <img src="~/components/icon.png" alt="logo">
-  </div>
+  <GridLayout rows="auto, auto">
+    <Label class="message" :text="msg" row="0" horizontalAlignment="center"/>
+    <!-- copy-webpack-plugin copies asset from src/assets to project output/build directory /assets -->
+    <Image src="~/components/icon.png" row="1" class="m-40"/>
+  </GridLayout>
 </template>
 <%_ if (!usingTS) { _%>
 <%# -------------------- Is Not Using TypeScript  -------------------- -%>
@@ -25,6 +26,7 @@
   export default class HelloWorld extends Vue {
     @Prop(String) private msg!: string;
   }
+
 </script>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -41,16 +43,12 @@
 %>
   .message {
     color: #42b983;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-    text-align: center;
   }
-  img {
-    height: 75px;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
+
+  Image {
+    height: 20%;
+    width: 20%;
+    margin-top: 20px;
   }
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'stylus') { _%>
@@ -58,32 +56,23 @@
 <style scoped lang="stylus">
   .message
     color #42b983
-    display block
-    margin auto
-    margin-top 4em
-    text-align center
 
-  img
-    height 75px
-    display block
-    margin auto
-    margin-top 4em
+  Image
+    height 20%
+    width 20%
+    margin-top 20px
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'less') { _%>
 <%#   -------------------- IS Using Less -------------------- -%>
 <style scoped lang="less">
   .message {
     color: #42b983;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-    text-align: center;
   }
-  img {
-    height: 75px;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
+
+  Image {
+    height: 20%;
+    width: 20%;
+    margin-top: 20px;
   }
 </style>
 <%_   } _%>
@@ -92,16 +81,12 @@
 <style scoped>
   .message {
     color: #42b983;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
-    text-align: center;
   }
-  img {
-    height: 75px;
-    display: block;
-    margin: auto;
-    margin-top: 4em;
+
+  Image {
+    height: 20%;
+    width: 20%;
+    margin-top: 20px;
   }
 </style>
 <%_ } _%>

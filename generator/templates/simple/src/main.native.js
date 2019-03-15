@@ -9,21 +9,25 @@ replace:
 ---
 
 <%# REPLACE %>
-import Vue from 'vue';
+import Vue from 'nativescript-vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-import App from '~/App.vue';
+import App from './App.vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-Vue.config.productionTip = false;
+// Set the following to `true` to hide the logs created by nativescript-vue
+Vue.config.silent = false;
+// Set the following to `false` to not colorize the logs created by nativescript-vue
+// disabled in template due to typing issue for Typescript projects....NEEDS TO BE FIXED
+// Vue.config.debug = true;
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-(h) => h(App),
+(h) => h('frame', [h(App)]),
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-}).$mount('#app');
+}).$start();
 <%# END_REPLACE %>

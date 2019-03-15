@@ -1,23 +1,20 @@
-<%_   if (!options.isNativeOnly) { _%>
 <template web>
-  <div class="w-page">
-    <div class="w-container">
-      <span>This is an about page</span>
-    </div>
-  </div>
+  <Page>
+    <GridLayout>
+      <Label text="This is an about page" :textWrap="true" horizontalAlignment="center" verticalAlignment="center"/>
+    </GridLayout>
+  </Page>
 </template>
 <template native>
-<%_   } else { _%>
-<template>
-<%_   } _%>
   <Page>
     <ActionBar :title="navbarTitle"/>
     <GridLayout>
-      <Label text="This is an about page" textWrap="true" horizontalAlignment="center" verticalAlignment="center"/>
+      <Label text="This is an about page" :textWrap="true" horizontalAlignment="center" verticalAlignment="center"/>
     </GridLayout>
   </Page>
 </template>
 <%_ if (!usingTS) { _%>
+<%# -------------------- Is Not Using TypeScript  -------------------- -%>
 <script>
 
   export default {
@@ -29,6 +26,7 @@
   };
 </script>
 <%_ } else { _%>
+<%# -------------------- Is Using TypeScript  -------------------- -%>
 <script lang="ts">
   import { Component, Vue } from 'vue-property-decorator';
 
@@ -40,15 +38,6 @@
   }
 
 </script>
-<%_ } _%>
-<%_ if (!usingTS) { _%>
-<%# -------------------- Is Not Using TypeScript  -------------------- -%>
-<%# -------------------- Remove this line and Uncomment the next to use script tag - Prettier formatting bug removes all script tags if these are left in  -------------------- -%>
-<%# -------------------- <script></script>  -------------------- -%>
-<%_ } else { _%>
-<%# -------------------- Is Using TypeScript  -------------------- -%>
-<%# -------------------- Remove this line and Uncomment the next to use script tag - Prettier formatting bug removes all script tags if these are left in  -------------------- -%>
-<%# -------------------- <script lang="ts"></script>  -------------------- -%>
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor) { _%>
@@ -64,18 +53,54 @@
 %>
   @import '~styles/style-two';
   @import '~styles/style-one';
+
+  .nvw-label {
+    height: 100%;
+    width: 100%;
+    padding-top: 3em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    align-items: center;
+  }
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'stylus') { _%>
 <%#   -------------------- IS Using stylus -------------------- -%>
 <style scoped lang="stylus">
   @import '~styles/style-two';
   @import '~styles/style-one';
+
+  .nvw-label
+    height 100%
+    width 100%
+    padding-top 3em
+    position relative
+    overflow: hidden
+    display flex
+    flex-direction column
+    justify-content top
+    align-items center
+
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'less') { _%>
 <%#   -------------------- IS Using Less -------------------- -%>
 <style scoped lang="less">
   @import '~styles/style-two';
   @import '~styles/style-one';
+
+  .nvw-label {
+    height: 100%;
+    width: 100%;
+    padding-top: 3em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    align-items: center;
+  }
 </style>
 <%_   } _%>
 <%_ } else { _%>
@@ -83,5 +108,20 @@
 <style scoped>
   @import '~styles/style-two';
   @import '~styles/style-one';
+
+  .nvw-label {
+    height: 100%;
+    width: 100%;
+    padding-top: 3em;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: top;
+    align-items: center;
+  }
 </style>
 <%_ } _%>
+
+
+
