@@ -29,16 +29,9 @@
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor) { _%>
-<%_   if (rootOptions.cssPreprocessor == 'sass' || rootOptions.cssPreprocessor == 'scss') { _%>
-<%#   -------------------- IS Using scss OR sass -------------------- -%>
-<%- rootOptions.cssPreprocessor
-    ? `<style scoped lang="${
-        rootOptions.cssPreprocessor === 'sass'
-          ? 'scss'
-          : rootOptions.cssPreprocessor
-      }"` + `>`
-    : ``
-%>
+<%_   if (rootOptions.cssPreprocessor == 'sass' || rootOptions.cssPreprocessor == 'scss'  || rootOptions.cssPreprocessor == 'dart-sass' ) { _%>
+<%#   -------------------- IS Using sass, scss OR dart-sass -------------------- -%>
+<style scoped lang="scss">
   .message {
     color: #42b983;
     display: block;
