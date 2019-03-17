@@ -128,16 +128,9 @@
 <%_ } _%>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <%_ if (rootOptions.cssPreprocessor) { _%>
-<%_   if (rootOptions.cssPreprocessor == 'sass' || rootOptions.cssPreprocessor == 'scss') { _%>
-<%#   -------------------- IS Using scss OR sass -------------------- -%>
-<%- rootOptions.cssPreprocessor
-    ? `<style web lang="${
-        rootOptions.cssPreprocessor === 'sass'
-          ? 'scss'
-          : rootOptions.cssPreprocessor
-      }"` + `>`
-    : ``
-%>
+<%_   if (rootOptions.cssPreprocessor == 'sass' || rootOptions.cssPreprocessor == 'scss'  || rootOptions.cssPreprocessor == 'dart-sass' ) { _%>
+<%#   -------------------- IS Using sass, scss OR dart-sass -------------------- -%>
+<style web lang="scss">
   @import '~styles/style-one';
 
   .w-page {
@@ -150,14 +143,7 @@
   }
 
 </style>
-<%- rootOptions.cssPreprocessor
-    ? `<style native lang="${
-        rootOptions.cssPreprocessor === 'sass'
-          ? 'scss'
-          : rootOptions.cssPreprocessor
-      }"` + `>`
-    : ``
-%>
+<style native lang="scss">
   @import '~styles/style-one';
 </style>
 <%_   } else if (rootOptions.cssPreprocessor == 'stylus') { _%>

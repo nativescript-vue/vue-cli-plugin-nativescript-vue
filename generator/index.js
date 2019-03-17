@@ -868,6 +868,9 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
             case 'sass':
               if (rawPath.slice(-5) == '.scss' || rawPath.slice(-5) == '.sass') files.push(rawPath);
               break;
+            case 'dart-sass':
+              if (rawPath.slice(-5) == '.scss' || rawPath.slice(-5) == '.sass') files.push(rawPath);
+              break;
             case 'less':
               if (rawPath.slice(-5) == '.less') files.push(rawPath);
               break;
