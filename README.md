@@ -90,8 +90,7 @@ Before installing the Nativescript-Vue CLI 3 Plugin, make sure to commit or stas
 To install the Nativescript-Vue CLI 3 Plugin...
 ```
 cd my-app
-npm install --save-dev vue-cli-plugin-nativescript-vue
-vue invoke vue-cli-plugin-nativescript-vue
+vue add vue-cli-plugin-nativescript-vue
 ```
 
 ## Invocation Prompts
