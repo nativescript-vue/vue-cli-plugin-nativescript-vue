@@ -13,7 +13,12 @@ import Vue from 'nativescript-vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
+import Navigator from 'nativescript-vue-navigator'
+
 import App from './App.vue';
+import { options } from './router';
+
+Vue.use(Navigator, { routes: options.routes })
 <%# END_REPLACE %>
 
 <%# REPLACE %>
@@ -25,7 +30,7 @@ Vue.config.silent = false;
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-(h) => h('frame', [h(App)]),
+(h) => h(App),
 <%# END_REPLACE %>
 
 <%# REPLACE %>
