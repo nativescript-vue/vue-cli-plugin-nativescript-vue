@@ -37,7 +37,7 @@ Vue.config.silent = false;
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-(h) => h(App),
+h => h('frame', [h(App)]),
 <%# END_REPLACE %>
 
 <%# REPLACE %>
