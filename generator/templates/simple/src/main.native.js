@@ -18,7 +18,14 @@ import Navigator from 'nativescript-vue-navigator'
 import App from './App.vue';
 import { options } from './router';
 
-Vue.use(Navigator, { routes: options.routes })
+const routes = options.routes.reduce((data, route) => {
+  data[route.name] = {
+    component: route.component
+  }
+  return data
+}, {});
+
+Vue.use(Navigator, { routes });
 <%# END_REPLACE %>
 
 <%# REPLACE %>

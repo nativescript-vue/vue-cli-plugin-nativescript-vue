@@ -5,8 +5,11 @@ replace:
   - !!js/regexp /import Router from 'vue-router'/
   - !!js/regexp /Vue.use\(Router\)/
   - !!js/regexp /export default new Router\(\{/
-  - !!js/regexp /import Home from './views/Home.vue'/
-  - !!js/regexp /'./views/About.vue'\)/
+  - !!js/regexp /import Home from '\./views/Home.vue'/
+  - !!js/regexp /\(\) => import(.*)\.\/views\/About\.vue'\)/
+  - !!js/regexp /(\s+)\/\/ (.*)/
+  - !!js/regexp /(\s+)\/\/ (.*)/
+  - !!js/regexp /(\s+)\/\/ (.*)/
   - !!js/regexp /\}\)/
 ---
 
@@ -28,10 +31,20 @@ export const options = {
 
 <%# REPLACE %>
 import Home from '~/views/Home.vue';
+import About from '~/views/About.vue';
 <%# END_REPLACE %>
 
 <%# REPLACE %>
-'~/views/About.vue'),
+About,
+<%# END_REPLACE %>
+
+<%# REPLACE %>
+<%# END_REPLACE %>
+
+<%# REPLACE %>
+<%# END_REPLACE %>
+
+<%# REPLACE %>
 <%# END_REPLACE %>
 
 <%# REPLACE %>
