@@ -18,6 +18,7 @@ import Navigator from 'nativescript-vue-navigator'
 import App from './App.vue';
 import { options } from './router';
 
+// adapt vue-router routes to nativescript-vue-navigator
 const routes = options.routes.reduce((data, route) => {
   data[route.name] = {
     component: route.component
