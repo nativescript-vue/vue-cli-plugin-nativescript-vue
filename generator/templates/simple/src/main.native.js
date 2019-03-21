@@ -1,21 +1,10 @@
----
-extend: '@vue/cli-service/generator/template/src/main.js'
-replace:
-  - !!js/regexp /import Vue from 'vue'/
-  - !!js/regexp /import App from './App.vue'/
-  - !!js/regexp /Vue.config.productionTip = false/
-  - !!js/regexp /h => h\(App\),/
-  - !!js/regexp /}\)\.\$mount\('#app'\)/
----
-
-<%# REPLACE %>
 import Vue from 'nativescript-vue';
-<%# END_REPLACE %>
-
-<%# REPLACE %>
+<%_ if (rootOptions.router) { _%>
 import Navigator from 'nativescript-vue-navigator'
+<%_ } _%>
 
 import App from './App.vue';
+<%_ if (rootOptions.router) { _%>
 import { options } from './router';
 
 // adapt vue-router routes to nativescript-vue-navigator
@@ -27,20 +16,14 @@ const routes = options.routes.reduce((data, route) => {
 }, {});
 
 Vue.use(Navigator, { routes });
-<%# END_REPLACE %>
+<%_ } _%>
 
-<%# REPLACE %>
 // Set the following to `true` to hide the logs created by nativescript-vue
 Vue.config.silent = false;
 // Set the following to `false` to not colorize the logs created by nativescript-vue
 // disabled in template due to typing issue for Typescript projects....NEEDS TO BE FIXED
 // Vue.config.debug = true;
-<%# END_REPLACE %>
 
-<%# REPLACE %>
-h => h('frame', [h(App)]),
-<%# END_REPLACE %>
-
-<%# REPLACE %>
+new Vue({
+  render: h => h('frame', [h(App)]),
 }).$start();
-<%# END_REPLACE %>
