@@ -87,7 +87,7 @@
         this.goTo('about');
       },
       goTo(route) {
-        VUE_APP_MODE === 'web' ? this.$router.push(route) : Vue.prototype.$navigator.navigate(route);
+        VUE_APP_MODE === 'web' ? this.$router.push(route) : this.$navigator.navigate(route);
       }
 <%_   } _%>
     }
