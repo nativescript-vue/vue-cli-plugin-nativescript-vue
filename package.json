@@ -13,7 +13,11 @@
     "logo.png"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preversion": "npm test",
+    "version": "git add -A",
+    "postversion": "git push --tags origin master",
+    "prep": "npm version patch -m \"build %s\""
   },
   "author": "Igor Randjelovic",
   "license": "MIT",
@@ -27,6 +31,7 @@
     "@vue/cli-service": "^3.5.1",
     "@vue/eslint-config-airbnb": "^4.0.0",
     "@vue/eslint-config-prettier": "^4.0.1",
+    "cross-var": "^1.1.0",
     "ejs-lint": "^0.3.0",
     "eslint": "^5.15.3",
     "eslint-plugin-vue": "^5.2.2",
