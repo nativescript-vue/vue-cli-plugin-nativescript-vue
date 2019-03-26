@@ -162,8 +162,6 @@
   }
 
 </style>
-  @import '~styles/style-one';
-</style>
 <%_   } else if (rootOptions.cssPreprocessor == 'stylus') { _%>
 <%#   -------------------- IS Using stylus -------------------- -%>
 <style web lang="stylus">
