@@ -114,6 +114,14 @@ module.exports = async (api, options, rootOptions) => {
     //
   }
 
+  if (rootOptions.router) {
+    api.extendPackage({
+      dependencies: {
+        'nativescript-vue-navigator': '^0.0.3'
+      }
+    });
+  }
+
   if (api.hasPlugin('typescript')) {
     api.extendPackage({
       dependencies: {},

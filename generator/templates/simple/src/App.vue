@@ -56,9 +56,6 @@
 <script>
 <%_   if (!rootOptions.router) { _%>
   import HelloWorld from '~/components/HelloWorld';
-<%_   } else { _%>
-  import Home from '~/views/Home';
-  import About from '~/views/About';
 <%_   } _%>
 
 <%_   if (!rootOptions.router) { _%>
@@ -84,10 +81,13 @@
     methods: {
 <%_   if (rootOptions.router) { _%>
       goToHomePage() {
-        this.$navigateTo(Home);
+        this.goTo('home');
       },
       goToAboutPage() {
-        VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
+        this.goTo('about');
+      },
+      goTo(route) {
+        VUE_APP_MODE === 'web' ? this.$router.push(route) : this.$navigator.navigate(route);
       }
 <%_   } _%>
     }
@@ -99,9 +99,6 @@
   import { Component, Vue } from 'vue-property-decorator';
 <%_ if (!rootOptions.router) { _%>
   import HelloWorld from '~/components/HelloWorld.vue';
-<%_ } else { _%>
-  import Home from '~/views/Home.vue';
-  import About from '~/views/About.vue';
 <%_ } _%>
 
 <%_   if (!rootOptions.router) { _%>
@@ -125,12 +122,17 @@
 <%_ } _%>
 
 <%_ if (rootOptions.router) { _%>
+
     public goToHomePage() {
-      Vue.prototype.$navigateTo(Home);
+      this.goTo('home');
     }
 
     public goToAboutPage() {
-      VUE_APP_MODE === 'web' ? this.$router.push('about') : Vue.prototype.$navigateTo(About);
+      this.goTo('about');
+    }
+
+    public goTo(route) {
+      VUE_APP_MODE === 'web' ? this.$router.push(route) : Vue.prototype.$navigator.navigate(route);
     }
 <%_ } _%>
   }
