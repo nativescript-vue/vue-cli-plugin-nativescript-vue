@@ -77,18 +77,18 @@ module.exports = async (api, options, rootOptions) => {
       'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
-      'nativescript-vue': '^2.0.2',
-      'tns-core-modules': '^5.2.1'
+      'nativescript-vue': '^2.2.0',
+      'tns-core-modules': '^5.2.2'
     },
     devDependencies: {
-      'nativescript-dev-webpack': '^0.17.0',
-      'nativescript-vue-template-compiler': '^2.0.2',
-      'nativescript-worker-loader': '~0.9.1',
+      'nativescript-dev-webpack': '^0.20.3',
+      'nativescript-vue-template-compiler': '^2.2.0',
+      'nativescript-worker-loader': '~0.9.5',
       'node-sass': '^4.11.0',
       'string-replace-loader': '^2.1.1',
       rimraf: '^2.6.3',
       webpack: '^4.29.6',
-      'webpack-cli': '^3.2.3'
+      'webpack-cli': '^3.3.0'
     }
   });
 
@@ -126,7 +126,7 @@ module.exports = async (api, options, rootOptions) => {
     api.extendPackage({
       dependencies: {},
       devDependencies: {
-        'fork-ts-checker-webpack-plugin': '^0.4.15',
+        'fork-ts-checker-webpack-plugin': '^1.0.0',
         'terser-webpack-plugin': '^1.2.3'
         //'tns-platform-declarations': '^4.2.1'
       }
@@ -137,7 +137,7 @@ module.exports = async (api, options, rootOptions) => {
       api.extendPackage({
         dependencies: {},
         devDependencies: {
-          '@babel/types': '^7.1.3'
+          '@babel/types': '^7.4.0'
         }
       });
     }
@@ -147,10 +147,10 @@ module.exports = async (api, options, rootOptions) => {
   if (api.hasPlugin('babel')) {
     api.extendPackage({
       devDependencies: {
-        '@babel/core': '^7.3.4',
-        '@babel/preset-env': '^7.3.4',
+        '@babel/core': '^7.4.0',
+        '@babel/preset-env': '^7.4.1',
         'babel-loader': '^8.0.5',
-        '@babel/traverse': '^7.3.4'
+        '@babel/traverse': '^7.4.0'
       }
     });
 
