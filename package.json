@@ -13,7 +13,7 @@
     "logo.png"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"Error: no test specified\"",
     "preversion": "npm test",
     "version": "git add -A",
     "postversion": "git push --tags origin master",
