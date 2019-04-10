@@ -9,7 +9,7 @@ The key feature of this plugin is that it will allow you to compose SFC's that c
 
 An example of this would be the following Vue component:
 
-```
+```html
 <template web>
   <div class="w-page">
     <div class="w-container">
@@ -81,14 +81,14 @@ If vue-cli 3 is not yet installed, first follow the instructions here: https://g
 **Tip**: If you don't want to overwrite your current vue-cli 2 setup because you still need `vue init`, [then try this](https://cli.vuejs.org/guide/creating-a-project.html#pulling-2-x-templates-legacy).
 
 Generate a project using vue-cli 3.0
-```
+```bash
 vue create my-app
 ```
 
 Before installing the Nativescript-Vue CLI 3 Plugin, make sure to commit or stash changes in case you need to revert.
 
 To install the Nativescript-Vue CLI 3 Plugin...
-```
+```bash
 cd my-app
 vue add vue-cli-plugin-nativescript-vue
 ```
@@ -133,7 +133,7 @@ You should then be able to attach the Chrome debugger as you normally would via 
 You should also be able to debug directly in VSCode.  The [NativeScript VSCode Extension docs](https://docs.nativescript.org/angular/tooling/visual-studio-code-extension) are a good place to start with understanding how to do this.  However, you will need to modify your `launch.json` file to force `tns` to work properly with VUE CLI 3.
 
 Your `launch.json` file should look something like below. Notice the different in the `tnsArgs` line that is different than what is in the documentation link above.
-```
+```json
 {
   "version": "0.2.0",
   "configurations": [
@@ -190,7 +190,7 @@ Your `launch.json` file should look something like below. Notice the different i
 }
 ```
 You will also need to modify your `vue.config.js` file to include a `webpack-chain` statement that will setup your source map.  It should look something like this:
-```
+```js
 module.exports = {
   chainWebpack: config => {
     config
