@@ -904,7 +904,13 @@ const extractCallDir = (module.exports.extractCallDir = () => {
   try {
     const obj = {};
     Error.captureStackTrace(obj);
-    return path.dirname(obj.stack.split('\n')[3].match(/\s\((.*):\d+:\d+\)$/)[1]);
+    const callSite = obj.stack.split('\n')[3];
+    let { fileName } = /(?<fileName>[^(\s]+):[0-9]+:[0-9]+/.exec(callSite).groups;
+    if (fileName.indexOf('file') >= 0) {
+      fileName = new URL(fileName).pathname;
+    }
+    let dirname = path.dirname(fileName);
+    return dirname;
   } catch (err) {
     throw err;
   }

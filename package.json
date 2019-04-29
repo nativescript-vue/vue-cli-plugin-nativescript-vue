@@ -17,7 +17,9 @@
     "preversion": "npm test",
     "version": "git add -A",
     "postversion": "git push --tags origin master",
-    "prep": "npm version patch -m \"build %s\""
+    "prep:patch": "npm version patch -m \"build %s\"",
+    "prep:minor": "npm version minor -m \"build %s\"",
+    "prep:major": "npm version major -m \"build %s\""
   },
   "author": "Igor Randjelovic",
   "license": "MIT",

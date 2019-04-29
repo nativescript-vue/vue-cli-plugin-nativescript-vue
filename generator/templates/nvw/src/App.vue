@@ -70,6 +70,8 @@
 <%_ } else if (!usingTS && !rootOptions.router) { _%>
 <%# -------------------- IS NOT Using TypeScript AND IS NOT Using vue-router  -------------------- -%>
 <script>
+  import HelloWorld from './components/HelloWorld';
+  
   const { VUE_APP_MODE, VUE_APP_PLATFORM } = process.env;
 
   export default {
@@ -78,6 +80,9 @@
         navbarTitle: `App.vue`,
         msg: `Mode=${VUE_APP_MODE} and Platform=${VUE_APP_PLATFORM}`,
       };
+    },
+    components: {
+      HelloWorld,
     },
   };
 </script>
