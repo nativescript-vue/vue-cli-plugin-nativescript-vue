@@ -54,10 +54,10 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '5.2.0'
+        version: '5.4.0'
       },
       'tns-android': {
-        version: '5.2.1'
+        version: '5.4.0'
       }
     },
     scripts: {
@@ -78,12 +78,12 @@ module.exports = async (api, options, rootOptions) => {
       'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
-      'nativescript-vue': '^2.2.0',
-      'tns-core-modules': '^5.2.2'
+      'nativescript-vue': '^2.2.2',
+      'tns-core-modules': '^5.4.1'
     },
     devDependencies: {
-      'nativescript-dev-webpack': '^0.20.3',
-      'nativescript-vue-template-compiler': '^2.2.0',
+      'nativescript-dev-webpack': '^0.22.0',
+      'nativescript-vue-template-compiler': '^2.2.2',
       'nativescript-worker-loader': '~0.9.5',
       'node-sass': '^4.11.0',
       'string-replace-loader': '^2.1.1',
@@ -127,8 +127,8 @@ module.exports = async (api, options, rootOptions) => {
     api.extendPackage({
       dependencies: {},
       devDependencies: {
-        'fork-ts-checker-webpack-plugin': '^1.0.0',
-        'terser-webpack-plugin': '^1.2.3'
+        'fork-ts-checker-webpack-plugin': '^1.3.4',
+        'terser-webpack-plugin': '^1.3.0'
         //'tns-platform-declarations': '^4.2.1'
       }
     });
@@ -138,7 +138,7 @@ module.exports = async (api, options, rootOptions) => {
       api.extendPackage({
         dependencies: {},
         devDependencies: {
-          '@babel/types': '^7.4.0'
+          '@babel/types': '^7.4.4'
         }
       });
     }
@@ -148,10 +148,10 @@ module.exports = async (api, options, rootOptions) => {
   if (api.hasPlugin('babel')) {
     api.extendPackage({
       devDependencies: {
-        '@babel/core': '^7.4.0',
-        '@babel/preset-env': '^7.4.1',
-        'babel-loader': '^8.0.5',
-        '@babel/traverse': '^7.4.0'
+        '@babel/core': '^7.4.5',
+        '@babel/preset-env': '^7.4.5',
+        'babel-loader': '^8.0.6',
+        '@babel/traverse': '^7.4.5'
       }
     });
 
@@ -845,10 +845,7 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
 ) => {
   try {
     const files = new Array();
-    const baseDir = await extractCallDir();
-    console.log('baseDir - ', baseDir);
-    const _files = await getAllFilesInDirStructure(srcPathPrefix, baseDir);
-    console.log('_files - ', _files);
+    const _files = await getAllFilesInDirStructure(srcPathPrefix, __dirname);
 
     for (const rawPath of _files) {
       // // // let filename = path.basename(rawPath);
@@ -902,28 +899,41 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
   }
 });
 
-// extract callsite file location using error stack
-const extractCallDir = (module.exports.extractCallDir = () => {
-  try {
-    const obj = {};
-    Error.captureStackTrace(obj);
-    const callSite = obj.stack.split('\n')[3];
-    console.log('callSite - ', callSite);
+// THIS FUNCTION MAY NOT LONGER BE NEEDED AS OF 0.0.16
+// WILL KEEP THIS COMMENTED OUT CODE IN FOR A FEW OF RELEASES
+// // extract callsite file location using error stack
+// const extractCallDir = (module.exports.extractCallDir = () => {
+//   try {
+//     const obj = {};
+//     console.log('__dirname - ', __dirname);
+//     Error.captureStackTrace(obj);
+//     const callSite = obj.stack.split('\n')[3];
+//     console.log('callSite - ', callSite);
 
-    let { fileName } = /(?<fileName>[^(]+):[0-9]+:[0-9]+/.exec(callSite).groups;
-    console.log('fileName - ', fileName);
+//     let { fileName } = /(?<fileName>[^(]+):[0-9]+:[0-9]+/.exec(callSite).groups;
+//     console.log('fileName 1 - ', fileName);
 
-    if (fileName.indexOf('file') >= 0) {
-      fileName = new URL(fileName).pathname;
-    }
-    let dirname = path.dirname(fileName);
-    console.log('dirname - ', dirname);
+//     if (fileName.indexOf('file') >= 0) {
+//       fileName = new URL(fileName).pathname;
+//     }
 
-    return dirname;
-  } catch (err) {
-    throw err;
-  }
-});
+//     if (fileName.indexOf(fileName.length - 1) === ')') {
+//       fileName = fileName.splice(0, fileName.length - 1);
+//     }
+
+//     console.log(`fileName 2 - '`, fileName + `'`);
+
+//     fileName = fileName.replace('at ', '');
+//     console.log(`fileName 3 - '`, fileName) + `'`;
+
+//     let dirname = path.dirname(fileName);
+//     console.log(`dirname - '`, dirname + `'`);
+
+//     return __dirname;
+//   } catch (err) {
+//     throw err;
+//   }
+// });
 
 // utility function used to get all the files in a directory structure.  is recursive in nature due to globby
 const getAllFilesInDirStructure = (module.exports.replaceInFile = async (srcPathPrefix, baseDir) => {

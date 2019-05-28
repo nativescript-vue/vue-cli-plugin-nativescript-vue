@@ -53,7 +53,7 @@ An example of this would be the following Vue component:
 ```
 
 ### Optional Separation of concerns for Web and Native SFC's
-If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss` and `.css` files.
+If you want complete seperation of concerns between Web and Native for components, core logic and styling, you can also provide an alternate file naming scheme in your project. The name will dictate which mode (Web or Native) and platform (Android or IOS) the file will be used with. The same overall schema will work for `.vue`, `.js`, `.ts`, `.scss`, `.css`, `.styl`, and `.less` files.
 
 | File Type  | Android __and__ IOS | Android only    | IOS only        | Web only        |
 | ---------- | ------------------- | --------------- | --------------- | --------------- |
@@ -62,6 +62,8 @@ If you want complete seperation of concerns between Web and Native for component
 | ts         | *.native.ts         | *.android.ts    | *.ios.ts        | *.ts            |
 | scss       | *.native.scss       | *.android.scss  | *.ios.scss      | *.scss          |
 | css        | *.native.css        | *.android.css   | *.ios.css       | *.css           |
+| stylus     | *.native.styl       | *.android.styl  | *.ios.styl      | *.styl          |
+| less       | *.native.less       | *.android.less  | *.ios.less      | *.less          |
 
 Webpack will handle figuring out which files to include based on the `npm run` command syntax you pass in.  You can also mix and match this file naming schema with the `web` or `native` tag options mentioned above.
 
@@ -204,9 +206,11 @@ You should be able to use the NativeScript Playground and Preview Apps via the f
 1.  `npm run preview:android`
 2.  `npm run preview:ios`
 
-#### --env command line recognition
+#### --env & --hmr command line recognition
 Basic support for passing the `env` command line option is in place, but has a slightly different syntax since we're working with the CLI 3 webpack infrastructure.  To inject items into `env` at run-time, you will need to add `-- --env.option` Where option is one of the recognized options that Nativescript-Vue and this project supports.
 An example of this would be something like this: `npm run serve:android -- --env.production`.  This would allow you to serve up a Production build of your Android app versus just running `npm run serve:android` which would serve a Development version of the same.
+
+HMR will also work by passing in `-- --hmr`.  An example of this would be `npm run serve:android -- --hmr`
 
 #### Webpack related information
 The options passed in at `npm run` will dictate what webpack config is provided.  The first choice webpack will make is if this is a `web` or `native` environment.  Then, if it's a `native` environment, it will determine choices to be made between `ios` and `android`.

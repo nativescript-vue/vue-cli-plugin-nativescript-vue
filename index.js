@@ -8,8 +8,6 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const DefinePlugin = require('webpack/lib/DefinePlugin');
 
-// // // const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
-
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -82,12 +80,10 @@ const resolveExtensionsOptions = {
 };
 
 const getBlockRegex = (tag, mode) => {
-  //return `<${tag} ${mode}([\\s]+[\\S]+(="[\\S]+")?)*[\\s]*>[\\s\\S]*?<\/${tag}>`;
   return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/${tag}>)`;
 };
 
 module.exports = (api, projectOptions) => {
-  // // // const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
   let env = new Object();
   let flags = new Array();
 
@@ -116,9 +112,9 @@ module.exports = (api, projectOptions) => {
 
   const platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
 
-  // if (!platform) {
-  //   throw new Error('You need to provide a target platform!');
-  // }
+  if (!platform) {
+    throw new Error('You need to provide a target platform!');
+  }
 
   const projectRoot = api.service.context;
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
@@ -191,7 +187,8 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     config
       .mode(mode)
       .context(appFullPath)
-      .devtool('none')
+      // .devtool('none')   --> OLD WILL SOON BE DELETED
+      .devtool(hiddenSourceMap ? 'hidden-source-map' : sourceMap ? 'inline-source-map' : 'none')
       .end();
 
     config.externals(externals).end();
@@ -210,8 +207,8 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     config.entryPoints // clear out old config.entryPoints and install new
       .clear()
       .end()
-      // // .entry('bundle')
-      .entry(entries)
+      .entry('bundle')
+      // .entry(entries)
       .add(entryPath)
       .end();
 
@@ -221,10 +218,12 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     config.output
       .pathinfo(false)
       .path(dist)
+      .sourceMapFilename(sourceMapFilename)
       .libraryTarget('commonjs2')
       .filename(`[name].js`)
       .globalObject('global')
-      .hashSalt.end();
+      .hashSalt(hashSalt)
+      .end();
 
     // next several use the resolveExtension function to easily
     // add in resolve.extensions from an object array const
@@ -280,21 +279,22 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .set('__dirname', false)
       .end();
 
-    config.optimization
-      .splitChunks({
-        cacheGroups: {
-          vendor: {
-            name: 'vendor',
-            chunks: 'all',
-            test: (module) => {
-              const moduleName = module.nameForCondition ? module.nameForCondition() : '';
-              return /[\\/]node_modules[\\/]/.test(moduleName) || appComponents.some((comp) => comp === moduleName);
-            },
-            enforce: true
+    config.optimization.runtimeChunk('single'), // --> NOT WORKING YET
+      config.optimization
+        .splitChunks({
+          cacheGroups: {
+            vendor: {
+              name: 'vendor',
+              chunks: 'all',
+              test: (module) => {
+                const moduleName = module.nameForCondition ? module.nameForCondition() : '';
+                return /[\\/]node_modules[\\/]/.test(moduleName) || appComponents.some((comp) => comp === moduleName);
+              },
+              enforce: true
+            }
           }
-        }
-      })
-      .end();
+        })
+        .end();
 
     config.optimization.minimize(Boolean(production));
     config.optimization
@@ -302,16 +302,19 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         new TerserPlugin({
           parallel: true,
           cache: true,
+          sourceMap: isAnySourceMapEnabled,
           terserOptions: {
             output: {
-              comments: false
+              comments: false,
+              semicolons: !isAnySourceMapEnabled
             },
             compress: {
               // The Android SBG has problems parsing the output
               // when these options are enabled
               collapse_vars: platform !== 'android',
               sequences: platform !== 'android'
-            }
+            },
+            keep_fnames: true
           }
         })
       ])
@@ -319,12 +322,16 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
 
     config.module
       .rule('native-loaders')
-      .test(new RegExp(entryPath))
+      // .test(new RegExp(entryPath)) --> OLD ENTRY - TO BE REMOVED
+      .test(new RegExp(nsWebpack.getEntryPathRegExp(appFullPath, entryPath + '.(js|ts)')))
       .use('nativescript-dev-webpack/bundle-config-loader')
       .loader('nativescript-dev-webpack/bundle-config-loader')
       .options({
         registerPages: true, // applicable only for non-angular apps
-        loadCss: false //!snapshot // load the application css if in debug mode
+        loadCss: !snapshot, // load the application css if in debug mode
+        unitTesting,
+        appFullPath,
+        projectRoot
       })
       .end();
 
@@ -422,7 +429,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         .test(/\.ts$/)
         .use('ts-loader')
         .loader('ts-loader')
-        .options(tsConfigOptions)
+        .options(Object.assign({}, tsConfigOptions))
         .end();
 
       config.module.rules.get('tsx').uses.delete('cache-loader');
@@ -441,7 +448,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         .test(/\.tsx$/)
         .use('ts-loader')
         .loader('ts-loader')
-        .options(tsxConfigOptions)
+        .options(Object.assign({}, tsxConfigOptions))
         .end();
     }
 
@@ -457,10 +464,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .get('css')
       .oneOfs.get('normal')
       .uses.delete('vue-style-loader');
-    config.module.rules
-      .get('css')
-      .oneOfs.get('normal')
-      .uses.delete('postcss-loader');
+    // config.module.rules
+    //   .get('css')
+    //   .oneOfs.get('normal')
+    //   .uses.delete('postcss-loader');
     config.module
       .rule('css')
       .oneOf('normal')
@@ -502,10 +509,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .get('scss')
       .oneOfs.get('normal')
       .uses.delete('vue-style-loader');
-    config.module.rules
-      .get('scss')
-      .oneOfs.get('normal')
-      .uses.delete('postcss-loader');
+    // config.module.rules
+    //   .get('scss')
+    //   .oneOfs.get('normal')
+    //   .uses.delete('postcss-loader');
     config.module
       .rule('scss')
       .oneOf('normal')
@@ -564,10 +571,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .get('sass')
       .oneOfs.get('normal')
       .uses.delete('vue-style-loader');
-    config.module.rules
-      .get('sass')
-      .oneOfs.get('normal')
-      .uses.delete('postcss-loader');
+    // config.module.rules
+    //   .get('sass')
+    //   .oneOfs.get('normal')
+    //   .uses.delete('postcss-loader');
     config.module
       .rule('sass')
       .oneOf('normal')
@@ -622,10 +629,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .get('stylus')
       .oneOfs.get('normal')
       .uses.delete('vue-style-loader');
-    config.module.rules
-      .get('stylus')
-      .oneOfs.get('normal')
-      .uses.delete('postcss-loader');
+    // config.module.rules
+    //   .get('stylus')
+    //   .oneOfs.get('normal')
+    //   .uses.delete('postcss-loader');
     config.module
       .rule('stylus')
       .oneOf('normal')
@@ -678,10 +685,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .get('less')
       .oneOfs.get('normal')
       .uses.delete('vue-style-loader');
-    config.module.rules
-      .get('less')
-      .oneOfs.get('normal')
-      .uses.delete('postcss-loader');
+    // config.module.rules
+    //   .get('less')
+    //   .oneOfs.get('normal')
+    //   .uses.delete('postcss-loader');
     config.module
       .rule('less')
       .oneOf('normal')
@@ -726,20 +733,39 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       )
       .end();
 
+    // // TO DO
+    // // Needs to be added and converted to webpack Chain
+    // if (unitTesting) {
+    //   config.module.rules.push(
+    //       {
+    //           test: /-page\.js$/,
+    //           use: "nativescript-dev-webpack/script-hot-loader"
+    //       },
+    //       {
+    //           test: /\.(html|xml)$/,
+    //           use: "nativescript-dev-webpack/markup-hot-loader"
+    //       },
+
+    //       { test: /\.(html|xml)$/, use: "nativescript-dev-webpack/xml-namespace-loader" }
+    //   );
+    // }
+
     // delete these rules that come standard with CLI 3
     // need to look at adding these back in after evaluating impact
     config.module.rules.delete('images').end();
-    // config.module.rules.delete('svg');
-    // config.module.rules.delete('media');
-    // config.module.rules.delete('fonts');
-    // config.module.rules.delete('pug');
-    // config.module.rules.delete('postcss');
-    // // config.module.rules.delete('less');
-    // // config.module.rules.delete('stylus');
-    // config.module.rules.delete('eslint').end();
+    // config.module.rules.delete('svg');           --> TO BE DELETED SOON
+    // config.module.rules.delete('media');         --> TO BE DELETED SOON
+    // config.module.rules.delete('fonts');         --> TO BE DELETED SOON
+    // config.module.rules.delete('pug');           --> TO BE DELETED SOON
+    // config.module.rules.delete('postcss');       --> TO BE DELETED SOON
+    // config.module.rules.delete('eslint').end();  --> TO BE DELETED SOON
+
+    // only delete the plugin if we aren't calling for HMR
+    if (!env.hmr) {
+      config.plugins.delete('hmr');
+    }
 
     // delete these plugins that come standard with CLI 3
-    config.plugins.delete('hmr');
     config.plugins.delete('html');
     config.plugins.delete('preload');
     config.plugins.delete('prefetch');
@@ -758,6 +784,10 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     }
 
     // create new plugins
+    config
+      .plugin('vue-loader')
+      .use(VueLoaderPlugin, [])
+      .end();
 
     // Define useful constants like TNS_WEBPACK
     // Merge DefinePlugin options that come in native from CLI 3
@@ -782,18 +812,21 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .end();
 
     // Copy native app resources to out dir.
-    config
-      .plugin('copy-native-resources')
-      .use(CopyWebpackPlugin, [
-        [
-          {
-            from: `${appResourcesFullPath}/${appResourcesPlatformDir}`,
-            to: `${dist}/App_Resources/${appResourcesPlatformDir}`,
-            context: projectRoot
-          }
-        ]
-      ])
-      .end();
+    // only if doing a full build (tns run/build) and not previewing (tns preview)
+    if (!externals || externals.length === 0) {
+      config
+        .plugin('copy-native-resources')
+        .use(CopyWebpackPlugin, [
+          [
+            {
+              from: `${appResourcesFullPath}/${appResourcesPlatformDir}`,
+              to: `${dist}/App_Resources/${appResourcesPlatformDir}`,
+              context: projectRoot
+            }
+          ]
+        ])
+        .end();
+    }
 
     // Copy assets to the out dir.
     config
@@ -826,7 +859,14 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     // Generate a bundle starter script and activate it in package.json
     config
       .plugin('generate-bundle-starter')
-      .use(nsWebpack.GenerateBundleStarterPlugin, [['./vendor', './bundle']])
+      .use(nsWebpack.GenerateBundleStarterPlugin, [
+        // // // ['./vendor', './bundle'] --> TO BE DELETED SOON
+
+        // Don't include `runtime.js` when creating a snapshot. The plugin
+        // configures the WebPack runtime to be generated inside the snapshot
+        // module and no `runtime.js` module exist.
+        (snapshot ? [] : ['./runtime']).concat(['./vendor', './bundle'])
+      ])
       .end();
 
     // For instructions on how to set up workers with webpack
@@ -873,47 +913,40 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         .end();
     }
 
-    // // // the next several items are disabled as they are mirrored from the nativescript-dev-webpack
-    // // // project.  Need to figure out how to integrate some of that projects cli ability into this one.
-    // 	// config.when(report, (config) => {
-    // 	// 	config
-    // 	// 		.plugin('bundle-analyzer')
-    // 	// 		.use(BundleAnalyzerPlugin, [
-    // 	// 			{
-    // 	// 				analyzerMode: 'static',
-    // 	// 				openAnalyzer: false,
-    // 	// 				generateStatsFile: true,
-    // 	// 				reportFilename: resolve(projectRoot, 'report', `report.html`),
-    // 	// 				statsFilename: resolve(projectRoot, 'report', `stats.json`)
-    // 	// 			}
-    // 	// 		])
-    // 	// 		.end();
-    // 	// });
-
-    // 	// config.when(snapshot, (config) => {
-    // 	// 	config
-    // 	// 		.plugin('snapshot')
-    // 	// 		.use(nsWebpack.NativeScriptSnapshotPlugin, [
-    // 	// 			{
-    // 	// 				chunk: 'vendor',
-    // 	// 				requireModules: ['tns-core-modules/bundle-entry-points'],
-    // 	// 				projectRoot,
-    // 	// 				webpackConfig: config
-    // 	// 			}
-    // 	// 		])
-    // 	// 		.end();
-    // 	// });
-
-    config.when(hmr, (config) => {
+    // the next several items are disabled as they are mirrored from the nativescript-dev-webpack
+    // project.  Need to figure out how to integrate some of that projects cli ability into this one.
+    config.when(report, (config) => {
       config
-        .plugin('hmr')
-        .use(webpack.HotModuleReplacementPlugin(), [])
+        .plugin('bundle-analyzer')
+        .use(BundleAnalyzerPlugin, [
+          {
+            analyzerMode: 'static',
+            openAnalyzer: false,
+            generateStatsFile: true,
+            reportFilename: resolve(projectRoot, 'report', `report.html`),
+            statsFilename: resolve(projectRoot, 'report', `stats.json`)
+          }
+        ])
+        .end();
+    });
+
+    config.when(snapshot, (config) => {
+      config
+        .plugin('snapshot')
+        .use(nsWebpack.NativeScriptSnapshotPlugin, [
+          {
+            chunk: 'vendor',
+            requireModules: ['tns-core-modules/bundle-entry-points'],
+            projectRoot,
+            webpackConfig: config
+          }
+        ])
         .end();
     });
   });
 };
 
-const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
+const webConfig = (api, projectOptions, env, projectRoot) => {
   console.log('starting webConfig');
   const dist = projectOptions.outputDir;
 
@@ -936,7 +969,7 @@ const webConfig = (api, projectOptions, env, jsOrTs, projectRoot) => {
 
   api.chainWebpack((config) => {
     config.entry('app').clear();
-    config.entry('app').add(resolve(api.resolve('src'), 'main' + jsOrTs));
+    config.entry('app').add(resolve(api.resolve('src'), 'main'));
 
     config.output.path(dist).end();
 
