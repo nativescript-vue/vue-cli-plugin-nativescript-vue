@@ -10,18 +10,22 @@ const DefinePlugin = require('webpack/lib/DefinePlugin');
 
 // // // const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer');
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require('terser-webpack-plugin');
 
-const nativescriptTarget = require('nativescript-dev-webpack/nativescript-target');
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const NsVueTemplateCompiler = require('nativescript-vue-template-compiler');
+
 const nsWebpack = require('nativescript-dev-webpack');
+const nativescriptTarget = require('nativescript-dev-webpack/nativescript-target');
+const { NativeScriptWorkerPlugin } = require('nativescript-worker-loader/NativeScriptWorkerPlugin');
+
+const hashSalt = Date.now().toString();
 
 // eslint-disable-next-line prefer-destructuring
 const PlatformFSPlugin = nsWebpack.PlatformFSPlugin;
 // eslint-disable-next-line prefer-destructuring
 const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
-const { NativeScriptWorkerPlugin } = require('nativescript-worker-loader/NativeScriptWorkerPlugin');
 
 const resolveExtensionsOptions = {
   web: ['*', '.ts', '.tsx', '.js', '.jsx', '.vue', '.json', '.scss', '.styl', '.less', '.css'],
@@ -83,7 +87,7 @@ const getBlockRegex = (tag, mode) => {
 };
 
 module.exports = (api, projectOptions) => {
-  const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
+  // // // const jsOrTs = api.hasPlugin('typescript') ? '.ts' : '.js';
   let env = new Object();
   let flags = new Array();
 
@@ -122,20 +126,21 @@ module.exports = (api, projectOptions) => {
   // setup output directory depending on if we're building for web or native
   projectOptions.outputDir = join(projectRoot, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, projectRoot));
 
-  return appMode === 'web' ? webConfig(api, projectOptions, env, jsOrTs, projectRoot) : nativeConfig(api, projectOptions, env, jsOrTs, projectRoot, platform);
+  return appMode === 'web' ? webConfig(api, projectOptions, env, projectRoot) : nativeConfig(api, projectOptions, env, projectRoot, platform);
 };
 
 const resolveExtensions = (config, ext) => {
   config.resolve.extensions.add(ext).end();
 };
 
-const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) => {
+const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
   console.log('starting nativeConfig');
   process.env.VUE_CLI_TARGET = 'nativescript';
   const isNativeOnly = !fs.pathExistsSync(resolve(projectRoot, 'src'));
   const tsconfigFileName = 'tsconfig.json';
 
   const appComponents = ['tns-core-modules/ui/frame', 'tns-core-modules/ui/frame/activity'];
+
   const platforms = ['ios', 'android'];
 
   // Default destination inside platforms/<platform>/...
@@ -153,8 +158,13 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
     snapshot, // --env.snapshot
     production, // --env.production
     report, // --env.report
-    hmr // --env.hmr
+    hmr, // --env.hmr
+    sourceMap, // -env.sourceMap
+    hiddenSourceMap, // -env.HiddenSourceMap
+    unitTesting // -env.unittesting
   } = env;
+
+  const isAnySourceMapEnabled = !!sourceMap || !!hiddenSourceMap;
 
   // --env.externals
   const externals = (env.externals || []).map((e) => {
@@ -165,10 +175,17 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
 
   const appFullPath = resolve(projectRoot, appPath);
   const appResourcesFullPath = resolve(projectRoot, appResourcesPath);
+
   const entryModule = nsWebpack.getEntryModule(appFullPath);
   const entryPath = `.${sep}${entryModule}`;
+  const entries = { bundle: entryPath };
+  if (platform === 'ios') {
+    entries['tns_modules/tns-core-modules/inspector_modules'] = 'inspector_modules.js';
+  }
 
   console.log(`Bundling application for entryPath ${entryPath}...`);
+
+  let sourceMapFilename = nsWebpack.getSourceMapFilename(hiddenSourceMap, __dirname, dist);
 
   api.chainWebpack((config) => {
     config
@@ -193,7 +210,8 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
     config.entryPoints // clear out old config.entryPoints and install new
       .clear()
       .end()
-      .entry('bundle')
+      // // .entry('bundle')
+      .entry(entries)
       .add(entryPath)
       .end();
 
@@ -206,7 +224,7 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
       .libraryTarget('commonjs2')
       .filename(`[name].js`)
       .globalObject('global')
-      .end();
+      .hashSalt.end();
 
     // next several use the resolveExtension function to easily
     // add in resolve.extensions from an object array const
@@ -710,15 +728,15 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
 
     // delete these rules that come standard with CLI 3
     // need to look at adding these back in after evaluating impact
-    config.module.rules.delete('images');
-    config.module.rules.delete('svg');
-    config.module.rules.delete('media');
-    config.module.rules.delete('fonts');
-    config.module.rules.delete('pug');
-    config.module.rules.delete('postcss');
+    config.module.rules.delete('images').end();
+    // config.module.rules.delete('svg');
+    // config.module.rules.delete('media');
+    // config.module.rules.delete('fonts');
+    // config.module.rules.delete('pug');
+    // config.module.rules.delete('postcss');
     // // config.module.rules.delete('less');
     // // config.module.rules.delete('stylus');
-    config.module.rules.delete('eslint').end();
+    // config.module.rules.delete('eslint').end();
 
     // delete these plugins that come standard with CLI 3
     config.plugins.delete('hmr');
@@ -886,12 +904,12 @@ const nativeConfig = (api, projectOptions, env, jsOrTs, projectRoot, platform) =
     // 	// 		.end();
     // 	// });
 
-    // 	// config.when(hmr, (config) => {
-    // 	// 	config
-    // 	// 		.plugin('hmr')
-    // 	// 		.use(webpack.HotModuleReplacementPlugin(), [])
-    // 	// 		.end();
-    // 	// });
+    config.when(hmr, (config) => {
+      config
+        .plugin('hmr')
+        .use(webpack.HotModuleReplacementPlugin(), [])
+        .end();
+    });
   });
 };
 

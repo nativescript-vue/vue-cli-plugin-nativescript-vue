@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+
 const path = require('path');
 const fs = require('fs-extra');
 const replace = require('replace-in-file');
@@ -845,7 +846,9 @@ const renderDirectoryStructure = (module.exports.renderDirectoryStructure = asyn
   try {
     const files = new Array();
     const baseDir = await extractCallDir();
+    console.log('baseDir - ', baseDir);
     const _files = await getAllFilesInDirStructure(srcPathPrefix, baseDir);
+    console.log('_files - ', _files);
 
     for (const rawPath of _files) {
       // // // let filename = path.basename(rawPath);
@@ -905,11 +908,17 @@ const extractCallDir = (module.exports.extractCallDir = () => {
     const obj = {};
     Error.captureStackTrace(obj);
     const callSite = obj.stack.split('\n')[3];
-    let { fileName } = /(?<fileName>[^(\s]+):[0-9]+:[0-9]+/.exec(callSite).groups;
+    console.log('callSite - ', callSite);
+
+    let { fileName } = /(?<fileName>[^(]+):[0-9]+:[0-9]+/.exec(callSite).groups;
+    console.log('fileName - ', fileName);
+
     if (fileName.indexOf('file') >= 0) {
       fileName = new URL(fileName).pathname;
     }
     let dirname = path.dirname(fileName);
+    console.log('dirname - ', dirname);
+
     return dirname;
   } catch (err) {
     throw err;
