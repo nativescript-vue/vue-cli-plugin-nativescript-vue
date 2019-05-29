@@ -88,8 +88,8 @@ module.exports = async (api, options, rootOptions) => {
       'node-sass': '^4.11.0',
       'string-replace-loader': '^2.1.1',
       rimraf: '^2.6.3',
-      webpack: '^4.29.6',
-      'webpack-cli': '^3.3.0'
+      webpack: '4.28.4',
+      'webpack-cli': '^3.3.2'
     }
   });
 
@@ -278,9 +278,13 @@ module.exports = async (api, options, rootOptions) => {
         await tslintSetup(genConfig.dirPathPrefix, api.resolve('tslint.json'), genConfig.tsExclusionArray);
 
         const baseDir = genConfig.nativeAppPathModifier;
-        require('../lib/tslint')({
-          '_': [`${baseDir}**/*.ts`, `${baseDir}**/*.vue`, `${baseDir}**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
-        }, api, false);
+        require('../lib/tslint')(
+          {
+            _: [`${baseDir}**/*.ts`, `${baseDir}**/*.vue`, `${baseDir}**/*.tsx`, 'tests/**/*.ts', 'tests/**/*.tsx']
+          },
+          api,
+          false
+        );
       }
     }
 
