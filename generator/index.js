@@ -87,9 +87,9 @@ module.exports = async (api, options, rootOptions) => {
       'nativescript-worker-loader': '~0.9.5',
       'node-sass': '^4.11.0',
       'string-replace-loader': '^2.1.1',
-      rimraf: '^2.6.3',
-      webpack: '4.28.4',
-      'webpack-cli': '^3.3.2'
+      rimraf: '^2.6.3'
+      // webpack: '4.28.4',
+      // 'webpack-cli': '^3.3.2'
     }
   });
 
