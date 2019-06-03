@@ -92,18 +92,18 @@ module.exports = (api, projectOptions) => {
     return all;
   };
 
-  console.log('api.service.mode - ', api.service.mode);
+  // console.log('api.service.mode - ', api.service.mode);
 
   // are we using the vue cli or not and if so are we passing in the correct options
   if (api && api.service.mode && api.service.mode.indexOf('.') !== -1) {
     // will convert the --mode options into an array for later use
     flags = api.service.mode.split('.');
-    console.log('vue cli - flags - ', flags);
+    // console.log('vue cli - flags - ', flags);
   } else {
     // get the --env command line options and put them in the env variable
     const [, , ...processArgs] = process.argv;
     flags = [...processArgs].filter((f) => f.startsWith('--env.')).map((f) => f.substring(6));
-    console.log('tns cli - flags - ', flags);
+    // console.log('tns cli - flags - ', flags);
 
     // take advantage of the vue cli api to load the --env items into process.env.
     // we are filtering out the items, by catching the '=' sign, brought in from nsconfig.json as those don't need loaded into process.env
@@ -113,10 +113,10 @@ module.exports = (api, projectOptions) => {
 
   // setup the traditional {N} webpack 'env' variable
   env = flags.reduce(addOption, {});
-  console.log('env - ', env);
+  // console.log('env - ', env);
 
   const platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
-  console.log('platform - ', platform);
+  // console.log('platform - ', platform);
 
   if (!platform) {
     throw new Error('You need to provide a target platform!');
