@@ -542,7 +542,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
           {
             minimize: false,
             url: false,
-            data: '$PLATFORM: ' + platform
+            data: '$PLATFORM: ' + platform + ';'
           }
         )
       )
@@ -559,7 +559,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
           {
             minimize: false,
             url: false,
-            data: '$PLATFORM: ' + platform
+            data: '$PLATFORM: ' + platform + ';'
           }
         )
       )

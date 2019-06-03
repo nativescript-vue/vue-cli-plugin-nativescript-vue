@@ -82,7 +82,7 @@ module.exports = async (api, options, rootOptions) => {
       'tns-core-modules': '^5.4.1'
     },
     devDependencies: {
-      'nativescript-dev-webpack': '^0.22.0',
+      'nativescript-dev-webpack': '^0.24.0',
       'nativescript-vue-template-compiler': '^2.2.2',
       'nativescript-worker-loader': '~0.9.5',
       'node-sass': '^4.11.0',
