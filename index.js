@@ -108,7 +108,7 @@ module.exports = (api, projectOptions) => {
     // take advantage of the vue cli api to load the --env items into process.env.
     // we are filtering out the items, by catching the '=' sign, brought in from nsconfig.json as those don't need loaded into process.env
     // we are also filtering out 'sourceMap' which will appear with 'tns debug'
-    api.service.loadEnv(flags.filter((o) => !o.includes('=') && !o.includes('sourceMap')).join('.'));
+    api.service.loadEnv(flags.filter((o) => !o.includes('=') && !o.includes('sourceMap') && !o.includes('hmr')).join('.'));
   }
 
   // setup the traditional {N} webpack 'env' variable
