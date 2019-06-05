@@ -548,7 +548,7 @@ const gitignoreAdditions = (module.exports.gitignoreAdditions = async (api) => {
   try {
     let gitignoreContent;
     const gitignorePath = api.resolve('.gitignore');
-    const gitignoreAdditions = newline + '# NativeScript application' + newline + 'hooks' + newline + 'platforms' + newline + './webpack.config.js';
+    const gitignoreAdditions = newline + '# NativeScript application' + newline + 'hooks' + newline + 'platforms' + newline + 'webpack.config.js';
 
     if (fs.existsSync(gitignorePath)) {
       gitignoreContent = fs.readFileSync(gitignorePath, {
