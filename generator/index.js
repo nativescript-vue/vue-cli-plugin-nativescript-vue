@@ -595,7 +595,11 @@ const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsco
 
     nsconfigContent.appPath = nativeAppPathModifier.slice(0, -1);
     nsconfigContent.appResourcesPath = appResourcesPathModifier;
-
+    
+    if(options.isNewProject) {
+      nsconfigContent.useLegacyWorkflow = false;
+    }
+      
     fs.writeFileSync(
       dirPathPrefix + 'nsconfig.json',
       JSON.stringify(nsconfigContent, null, 2),
