@@ -255,7 +255,7 @@ module.exports = async (api, options, rootOptions) => {
     writeRootFiles(api, options, genConfig.dirPathPrefix);
 
     // create nsconfig.json in ./ or ./ns-example
-    nsconfigSetup(genConfig.dirPathPrefix, api.resolve('nsconfig.json'), genConfig.nativeAppPathModifier, genConfig.appResourcesPathModifier);
+    nsconfigSetup(genConfig.dirPathPrefix, api.resolve('nsconfig.json'), genConfig.nativeAppPathModifier, genConfig.appResourcesPathModifier, options);
 
     // copy over .vue with native.vue files
     if (options.isNativeOnly) {
@@ -579,7 +579,7 @@ const gitignoreAdditions = (module.exports.gitignoreAdditions = async (api) => {
 
 // setup nsconfig.json file.  for new projects it will write to the root of the project
 // and for existing projects it will write it to the ./ns-example directory
-const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsconfigPath, nativeAppPathModifier, appResourcesPathModifier) => {
+const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsconfigPath, nativeAppPathModifier, appResourcesPathModifier, options) => {
   let nsconfigContent = '';
 
   try {
@@ -595,11 +595,11 @@ const nsconfigSetup = (module.exports.nsconfigSetup = async (dirPathPrefix, nsco
 
     nsconfigContent.appPath = nativeAppPathModifier.slice(0, -1);
     nsconfigContent.appResourcesPath = appResourcesPathModifier;
-    
-    if(options.isNewProject) {
+
+    if (options.isNewProject) {
       nsconfigContent.useLegacyWorkflow = false;
     }
-      
+
     fs.writeFileSync(
       dirPathPrefix + 'nsconfig.json',
       JSON.stringify(nsconfigContent, null, 2),
