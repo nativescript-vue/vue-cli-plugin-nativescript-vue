@@ -58,10 +58,10 @@
     },
     methods: {
       goToHomePage() {
-        VUE_APP_MODE == 'web' ? this.$router.push('/') : this.$navigateTo(Home);
+        VUE_APP_MODE === 'web' ? this.$router.push('/') : this.$navigateTo(Home);
       },
       goToAboutPage() {
-        VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
+        VUE_APP_MODE === 'web' ? this.$router.push('about') : this.$navigateTo(About);
       },
     },
   };
@@ -100,11 +100,11 @@
     private navbarTitle: string = `App.vue`;
 
     private goToHomePage () {
-      VUE_APP_MODE == 'web' ? this.$router.push('/') : this.$navigateTo(Home);
+      VUE_APP_MODE === 'web' ? this.$router.push('/') : this.$navigateTo(Home);
     };
 
     private goToAboutPage () {
-      VUE_APP_MODE == 'web' ? this.$router.push('about') : this.$navigateTo(About);
+      VUE_APP_MODE === 'web' ? this.$router.push('about') : this.$navigateTo(About);
     };
   }
 
