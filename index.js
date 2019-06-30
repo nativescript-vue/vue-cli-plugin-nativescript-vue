@@ -80,7 +80,7 @@ const resolveExtensionsOptions = {
 };
 
 const getBlockRegex = (tag, mode) => {
-  return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/${tag}>)`;
+  return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*(<\\/${tag}>)(?=[\\s\\S]*?<${tag}.+\\b${mode === 'web' ? 'native' : 'web'}\\b[\\s\\S]*?>)|^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/${tag}>)`;
 };
 
 module.exports = (api, projectOptions) => {
