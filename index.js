@@ -118,11 +118,14 @@ module.exports = (api, projectOptions) => {
   env = flags.reduce(addOption, {});
   // console.log('env - ', env);
 
-  const platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
+  let platform = env && ((env.android && 'android') || (env.ios && 'ios') || (env.web && 'web'));
   // console.log('platform - ', platform);
 
   if (!platform) {
-    throw new Error('You need to provide a target platform!');
+    // TNS (iOS/Android) always sets platform, so assume platform = 'web' & Vue-CLI glitch of loosing .env options in the UI
+    platform = 'web';
+    //    --> TO BE DELETED SOON
+    // throw new Error('You need to provide a target platform!');
   }
 
   const projectRoot = api.service.context;
