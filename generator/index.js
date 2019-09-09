@@ -54,39 +54,39 @@ module.exports = async (api, options, rootOptions) => {
     nativescript: {
       id: 'org.nativescript.application',
       'tns-ios': {
-        version: '5.4.0'
+        version: '6.1.0'
       },
       'tns-android': {
-        version: '5.4.0'
+        version: '6.1.0'
       }
     },
     scripts: {
-      'build:android': 'npm run setup-webpack-config && tns build android --bundle --env.production && npm run remove-webpack-config',
-      'build:ios': 'npm run setup-webpack-config && tns build ios --bundle --env.production && npm run remove-webpack-config',
+      'build:android': 'npm run setup-webpack-config && tns build android --env.production && npm run remove-webpack-config',
+      'build:ios': 'npm run setup-webpack-config && tns build ios --env.production && npm run remove-webpack-config',
       'remove-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance post',
-      'serve:android': 'npm run setup-webpack-config && tns run android --bundle --env.development',
-      'serve:ios': 'npm run setup-webpack-config && tns run ios --bundle --env.development',
+      'serve:android': 'npm run setup-webpack-config && tns run android --env.development',
+      'serve:ios': 'npm run setup-webpack-config && tns run ios --env.development',
       // 'inspect:android': 'npm run setup-webpack-config && vue inspect -- --env.android > out-android.js',
       // 'inspect:ios': 'npm run setup-webpack-config && vue inspect -- --env.ios > out-ios.js',
-      'debug:android': 'npm run setup-webpack-config && tns debug android --bundle --env.development',
-      'debug:ios': 'npm run setup-webpack-config && tns debug ios --bundle --env.development',
-      'preview:android': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.android',
-      'preview:ios': 'npm run setup-webpack-config && tns preview --bundle --env.development --env.ios',
+      'debug:android': 'npm run setup-webpack-config && tns debug android --env.development',
+      'debug:ios': 'npm run setup-webpack-config && tns debug ios --env.development',
+      'preview:android': 'npm run setup-webpack-config && tns preview --env.development --env.android',
+      'preview:ios': 'npm run setup-webpack-config && tns preview --env.development --env.ios',
       'setup-webpack-config': 'node ./node_modules/vue-cli-plugin-nativescript-vue/lib/scripts/webpack-maintenance pre',
       'clean:platforms': 'rimraf platforms',
       'clean:android': 'rimraf platforms/android',
       'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
-      'nativescript-vue': '^2.2.2',
-      'tns-core-modules': '^5.4.1'
+      'nativescript-vue': '^2.4.0',
+      'tns-core-modules': '^6.1.0'
     },
     devDependencies: {
-      'nativescript-dev-webpack': '^0.24.0',
-      'nativescript-vue-template-compiler': '^2.2.2',
+      'nativescript-dev-webpack': '^1.2.0',
+      'nativescript-vue-template-compiler': '^2.4.0',
       'nativescript-worker-loader': '~0.9.5',
-      'node-sass': '^4.11.0',
-      'string-replace-loader': '^2.1.1',
+      'node-sass': '^4.12.0',
+      'string-replace-loader': '^2.2.0',
       rimraf: '^2.6.3'
       // webpack: '4.28.4',
       // 'webpack-cli': '^3.3.2'
@@ -118,7 +118,7 @@ module.exports = async (api, options, rootOptions) => {
   if (rootOptions.router) {
     api.extendPackage({
       dependencies: {
-        'nativescript-vue-navigator': '^0.0.3'
+        'nativescript-vue-navigator': '^0.2.0'
       }
     });
   }
@@ -127,9 +127,9 @@ module.exports = async (api, options, rootOptions) => {
     api.extendPackage({
       dependencies: {},
       devDependencies: {
-        'fork-ts-checker-webpack-plugin': '^1.3.4',
-        'terser-webpack-plugin': '^1.3.0'
-        //'tns-platform-declarations': '^4.2.1'
+        'fork-ts-checker-webpack-plugin': '^1.5.0',
+        'terser-webpack-plugin': '^2.0.1',
+        'tns-platform-declarations': '^6.1.0'
       }
     });
 
@@ -148,10 +148,10 @@ module.exports = async (api, options, rootOptions) => {
   if (api.hasPlugin('babel')) {
     api.extendPackage({
       devDependencies: {
-        '@babel/core': '^7.4.5',
-        '@babel/preset-env': '^7.4.5',
+        '@babel/core': '^7.5.5',
+        '@babel/preset-env': '^7.5.5',
         'babel-loader': '^8.0.6',
-        '@babel/traverse': '^7.4.5'
+        '@babel/traverse': '^7.5.5'
       }
     });
 

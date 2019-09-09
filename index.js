@@ -6,8 +6,6 @@ const fs = require('fs-extra');
 const webpack = require('webpack');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const DefinePlugin = require('webpack/lib/DefinePlugin');
-
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const TerserPlugin = require('terser-webpack-plugin');
 
@@ -20,10 +18,13 @@ const { NativeScriptWorkerPlugin } = require('nativescript-worker-loader/NativeS
 
 const hashSalt = Date.now().toString();
 
-// eslint-disable-next-line prefer-destructuring
-const PlatformFSPlugin = nsWebpack.PlatformFSPlugin;
-// eslint-disable-next-line prefer-destructuring
-const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
+const DefinePlugin = require('webpack/lib/DefinePlugin');
+
+// // // TO BE REMOVED SOON
+// // // // eslint-disable-next-line prefer-destructuring
+// // // const PlatformFSPlugin = nsWebpack.PlatformFSPlugin;
+// // // // eslint-disable-next-line prefer-destructuring
+// // // const WatchStateLoggerPlugin = nsWebpack.WatchStateLoggerPlugin;
 
 const resolveExtensionsOptions = {
   web: ['*', '.ts', '.tsx', '.js', '.jsx', '.vue', '.json', '.scss', '.styl', '.less', '.css'],
@@ -81,6 +82,8 @@ const resolveExtensionsOptions = {
 
 const getBlockRegex = (tag, mode) => {
   return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)[\\s\\S]*?(<\\/${tag}>)`;
+  // Rejected code from PR #26 as the issue could not be reproduced. Leaving it in commented out in case we need to look at this again in the future.
+  // return `^((<${tag})(.+\\b${mode}\\b))([\\s\\S]*?>)((?=[\\s\\S]*?<${tag}.+\\b${mode === 'web' ? 'native' : 'web'}\\b[\\s\\S]*?>)([\\s\\S]+(?=[\\s\\S]*?<${tag}.+\\b${mode === 'web' ? 'native' : 'web'}\\b[\\s\\S]*?>))|([\\s\\S]+<\\/${tag}>))`;
 };
 
 module.exports = (api, projectOptions) => {
@@ -119,10 +122,7 @@ module.exports = (api, projectOptions) => {
   // console.log('platform - ', platform);
 
   if (!platform) {
-    // TNS (iOS/Android) always sets platform, so assume platform = 'web' & Vue-CLI glitch of loosing .env options in the UI
-    platform = 'web';
-    //    --> TO BE DELETED SOON
-    // throw new Error('You need to provide a target platform!');
+    throw new Error('You need to provide a target platform!');
   }
 
   const projectRoot = api.service.context;
@@ -166,37 +166,51 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     hmr, // --env.hmr
     sourceMap, // -env.sourceMap
     hiddenSourceMap, // -env.HiddenSourceMap
-    unitTesting // -env.unittesting
+    unitTesting, // -env.unittesting
+    verbose // --env.verbose
   } = env;
 
   const isAnySourceMapEnabled = !!sourceMap || !!hiddenSourceMap;
+  const externals = nsWebpack.getConvertedExternals(env.externals);
 
-  // --env.externals
-  const externals = (env.externals || []).map((e) => {
-    return new RegExp(e + '.*');
-  });
+  // // // // --env.externals
+  // // // const externals = (env.externals || []).map((e) => {
+  // // //   return new RegExp(e + '.*');
+  // // // });
 
   const mode = production ? 'production' : 'development';
 
   const appFullPath = resolve(projectRoot, appPath);
   const appResourcesFullPath = resolve(projectRoot, appResourcesPath);
 
-  const entryModule = nsWebpack.getEntryModule(appFullPath);
+  // const entryModule = nsWebpack.getEntryModule(appFullPath);
+  const entryModule = nsWebpack.getEntryModule(appFullPath, platform);
   const entryPath = `.${sep}${entryModule}`;
   const entries = { bundle: entryPath };
-  if (platform === 'ios') {
-    entries['tns_modules/tns-core-modules/inspector_modules'] = 'inspector_modules.js';
+  const areCoreModulesExternal = Array.isArray(env.externals) && env.externals.some((e) => e.indexOf('tns-core-modules') > -1);
+  // // if (platform === 'ios' ) {
+  // //   entries['tns_modules/tns-core-modules/inspector_modules'] = 'inspector_modules.js';
+  // // }
+  if (platform === 'ios' && !areCoreModulesExternal) {
+    entries['tns_modules/tns-core-modules/inspector_modules'] = 'inspector_modules';
   }
 
   console.log(`Bundling application for entryPath ${entryPath}...`);
 
   let sourceMapFilename = nsWebpack.getSourceMapFilename(hiddenSourceMap, __dirname, dist);
 
+  const itemsToClean = [`${dist}/**/*`];
+  if (platform === 'android') {
+    itemsToClean.push(`${join(projectRoot, 'platforms', 'android', 'app', 'src', 'main', 'assets', 'snapshots')}`);
+    itemsToClean.push(`${join(projectRoot, 'platforms', 'android', 'app', 'build', 'configurations', 'nativescript-android-snapshot')}`);
+  }
+
+  nsWebpack.processAppComponents(appComponents, platform);
+
   api.chainWebpack((config) => {
     config
       .mode(mode)
       .context(appFullPath)
-      // .devtool('none')   --> OLD WILL SOON BE DELETED
       .devtool(hiddenSourceMap ? 'hidden-source-map' : sourceMap ? 'inline-source-map' : 'none')
       .end();
 
@@ -272,6 +286,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .set('styles', resolve(isNativeOnly ? api.resolve('app') : api.resolve('src'), 'styles'))
       .set('root', projectRoot)
       .set('vue$', 'nativescript-vue')
+      .set('vue', 'nativescript-vue')
       .end()
       .symlinks(true) // don't resolve symlinks to symlinked modules
       .end();
@@ -340,7 +355,8 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         loadCss: !snapshot, // load the application css if in debug mode
         unitTesting,
         appFullPath,
-        projectRoot
+        projectRoot,
+        ignoredFiles: nsWebpack.getUserDefinedEntries(entries, platform)
       })
       .end();
 
@@ -433,6 +449,12 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
 
       tsConfigOptions.configFile = resolve(projectRoot, tsconfigFileName);
 
+      (tsConfigOptions.appendTsSuffixTo = [/\.vue$/]),
+        (tsConfigOptions.allowTsInNodeModules = true),
+        (tsConfigOptions.compilerOptions = {
+          declaration: false
+        });
+
       config.module
         .rule('ts')
         .test(/\.ts$/)
@@ -451,6 +473,11 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
         .get('options');
 
       tsxConfigOptions.configFile = resolve(projectRoot, tsconfigFileName);
+      (tsxConfigOptions.appendTsSuffixTo = [/\.vue$/]),
+        (tsxConfigOptions.allowTsInNodeModules = true),
+        (tsxConfigOptions.compilerOptions = {
+          declaration: false
+        });
 
       config.module
         .rule('tsx')
@@ -498,7 +525,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('css-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false,
             importLoaders: 1
           }
@@ -560,7 +587,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('sass-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false,
             data: '$PLATFORM: ' + platform + ';'
           }
@@ -605,7 +632,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('css-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false,
             data: '$PLATFORM: ' + platform
           }
@@ -663,7 +690,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('css-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false
           }
         )
@@ -719,7 +746,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('css-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false
           }
         )
@@ -735,7 +762,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('less-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false
           }
         )
@@ -762,12 +789,6 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     // delete these rules that come standard with CLI 3
     // need to look at adding these back in after evaluating impact
     config.module.rules.delete('images').end();
-    // config.module.rules.delete('svg');           --> TO BE DELETED SOON
-    // config.module.rules.delete('media');         --> TO BE DELETED SOON
-    // config.module.rules.delete('fonts');         --> TO BE DELETED SOON
-    // config.module.rules.delete('pug');           --> TO BE DELETED SOON
-    // config.module.rules.delete('postcss');       --> TO BE DELETED SOON
-    // config.module.rules.delete('eslint').end();  --> TO BE DELETED SOON
 
     // only delete the plugin if we aren't calling for HMR
     if (!env.hmr) {
@@ -804,7 +825,9 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
       .plugin('define')
       .use(DefinePlugin, [
         Object.assign(config.plugin('define').get('args')[0], {
-          TNS_ENV: JSON.stringify(mode)
+          'global.TNS_WEBPACK': 'true',
+          TNS_ENV: JSON.stringify(mode),
+          process: 'global.process'
         })
       ])
       .end();
@@ -813,10 +836,12 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     config
       .plugin('clean')
       .use(CleanWebpackPlugin, [
-        join(dist, '/**/*'),
-        {
-          root: dist
-        }
+        itemsToClean,
+        { verbose: !!verbose }
+        // join(dist, '/**/*'),
+        // {
+        //   root: dist
+        // }
       ])
       .end();
 
@@ -887,7 +912,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
 
     config
       .plugin('platform-FS')
-      .use(PlatformFSPlugin, [
+      .use(nsWebpack.PlatformFSPlugin, [
         {
           platform,
           platforms
@@ -898,7 +923,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
     // Does IPC communication with the {N} CLI to notify events when running in watch mode.
     config
       .plugin('watch-state-logger')
-      .use(WatchStateLoggerPlugin, [])
+      .use(nsWebpack.WatchStateLoggerPlugin, [])
       .end();
 
     // Another only do this if we're using typescript.  this code could have been put
