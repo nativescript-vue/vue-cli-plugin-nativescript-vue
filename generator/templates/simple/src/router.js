@@ -1,5 +1,5 @@
 ---
-extend: '@vue/cli-service/generator/router/template/src/router.js'
+extend: '@vue/cli-service/generator/router.js'
 replace:
   - !!js/regexp /import Vue from 'vue'/
   - !!js/regexp /import Router from 'vue-router'/
