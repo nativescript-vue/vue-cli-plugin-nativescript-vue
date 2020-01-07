@@ -53,11 +53,11 @@ module.exports = async (api, options, rootOptions) => {
   api.extendPackage({
     nativescript: {
       id: 'org.nativescript.application',
-      'tns-ios': {
-        version: '6.1.0'
-      },
       'tns-android': {
-        version: '6.1.0'
+        version: '6.3.1'
+      },
+      'tns-ios': {
+        version: '6.3.0'
       }
     },
     scripts: {
@@ -78,12 +78,12 @@ module.exports = async (api, options, rootOptions) => {
       'clean:ios': 'rimraf platforms/ios'
     },
     dependencies: {
-      'nativescript-vue': '^2.4.0',
-      'tns-core-modules': '^6.1.0'
+      'nativescript-vue': '^2.5.0-alpha.3',
+      'tns-core-modules': '^6.3.2'
     },
     devDependencies: {
-      'nativescript-dev-webpack': '^1.2.0',
-      'nativescript-vue-template-compiler': '^2.4.0',
+      'nativescript-dev-webpack': '^1.4.0',
+      'nativescript-vue-template-compiler': '^2.5.0-alpha.3',
       'nativescript-worker-loader': '~0.9.5',
       'node-sass': '^4.12.0',
       'string-replace-loader': '^2.2.0',
@@ -128,8 +128,8 @@ module.exports = async (api, options, rootOptions) => {
       dependencies: {},
       devDependencies: {
         'fork-ts-checker-webpack-plugin': '^1.5.0',
-        'terser-webpack-plugin': '^2.0.1',
-        'tns-platform-declarations': '^6.1.0'
+        'terser-webpack-plugin': '^2.1.3',
+        'tns-platform-declarations': '^6.3.2'
       }
     });
 

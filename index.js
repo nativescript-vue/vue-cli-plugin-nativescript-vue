@@ -343,26 +343,25 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
 
     config.optimization.minimize(Boolean(production));
     config.optimization
-      .minimizer([
-        new TerserPlugin({
-          parallel: true,
-          cache: true,
-          sourceMap: isAnySourceMapEnabled,
-          terserOptions: {
-            output: {
-              comments: false,
-              semicolons: !isAnySourceMapEnabled
-            },
-            compress: {
-              // The Android SBG has problems parsing the output
-              // when these options are enabled
-              collapse_vars: platform !== 'android',
-              sequences: platform !== 'android'
-            },
-            keep_fnames: true
-          }
-        })
-      ])
+      .minimizer('terser')
+      .use(TerserPlugin, [{
+        parallel: true,
+        cache: true,
+        sourceMap: isAnySourceMapEnabled,
+        terserOptions: {
+          output: {
+            comments: false,
+            semicolons: !isAnySourceMapEnabled
+          },
+          compress: {
+            // The Android SBG has problems parsing the output
+            // when these options are enabled
+            collapse_vars: platform !== 'android',
+            sequences: platform !== 'android'
+          },
+          keep_fnames: true
+        }
+      }])
       .end();
 
     config.module
@@ -591,9 +590,9 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('css-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             url: false,
-            data: '$PLATFORM: ' + platform + ';'
+            // data: '$PLATFORM: ' + platform + ';'
           }
         )
       )
@@ -609,8 +608,8 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .get('options'),
           {
             // minimize: false,
-            url: false,
-            data: '$PLATFORM: ' + platform + ';'
+            // url: false,
+            prependData: '$PLATFORM: ' + platform + ';'
           }
         )
       )
@@ -655,7 +654,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
           {
             // minimize: false,
             url: false,
-            data: '$PLATFORM: ' + platform
+            //  data: '$PLATFORM: ' + platform
           }
         )
       )
@@ -671,8 +670,8 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .get('options'),
           {
             minimize: false,
-            url: false,
-            data: '$PLATFORM: ' + platform
+            // url: false,
+            prependData: '$PLATFORM: ' + platform
           }
         )
       )
