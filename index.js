@@ -106,12 +106,30 @@ module.exports = (api, projectOptions) => {
     // get the --env command line options and put them in the env variable
     const [, , ...processArgs] = process.argv;
     flags = [...processArgs].filter((f) => f.startsWith('--env.')).map((f) => f.substring(6));
+
+    // in the rare event that tns and vue-cli get things mixed up and try and load the production
+    // environment and development environment at the same time, we will default to loading 
+    // the development environment.  you will generally see this when using something like
+    // fastlane and having it do a 'tns prepare' as you are prepping to package and upload
+    //  your app to the app store.  For internal testing you may want to package a development 
+    // version of the app, but `tns prepare` will try and load the production environmental variables
+    if(flags.includes('development') && flags.includes('production')) {
+      const index = flags.findIndex((obj) => obj === 'production')
+      if(index > -1) {
+        flags.splice(index, 1);
+      }
+    }
+
     // console.log('tns cli - flags - ', flags);
 
     // take advantage of the vue cli api to load the --env items into process.env.
     // we are filtering out the items, by catching the '=' sign, brought in from nsconfig.json as those don't need loaded into process.env
-    // we are also filtering out 'sourceMap' which will appear with 'tns debug'
-    api.service.loadEnv(flags.filter((o) => !o.includes('=') && !o.includes('sourceMap') && !o.includes('hmr')).join('.'));
+    // we are also filtering out 'sourceMap' which will appear with 'tns debug' as well as 'hmr' and 'uglify'
+    // the goal here is to figure out exactly what environmental variables to load
+    const mode = flags.filter((o) => !o.includes('=') && !o.includes('sourceMap') && !o.includes('hmr') && !o.includes('uglify')).join('.');
+    // console.log('loadEnv - ', mode);
+    api.service.loadEnv(mode);
+
   }
 
   // setup the traditional {N} webpack 'env' variable
