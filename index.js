@@ -669,7 +669,7 @@ const nativeConfig = (api, projectOptions, env, projectRoot, platform) => {
             .uses.get('sass-loader')
             .get('options'),
           {
-            minimize: false,
+            // minimize: false,
             // url: false,
             prependData: '$PLATFORM: ' + platform
           }
