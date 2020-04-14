@@ -150,7 +150,7 @@ module.exports = (api, projectOptions) => {
   const appMode = platform === 'android' ? 'native' : platform === 'ios' ? 'native' : 'web';
 
   // setup output directory depending on if we're building for web or native
-  projectOptions.outputDir = join(projectRoot, appMode === 'web' ? 'dist' : nsWebpack.getAppPath(platform, projectRoot));
+  projectOptions.outputDir = join(projectRoot, appMode === 'web' ? projectOptions.outputDir : nsWebpack.getAppPath(platform, projectRoot));
 
   return appMode === 'web' ? webConfig(api, projectOptions, env, projectRoot) : nativeConfig(api, projectOptions, env, projectRoot, platform);
 };
