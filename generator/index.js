@@ -45,7 +45,8 @@ module.exports = async (api, options, rootOptions) => {
     historyMode: options.historyMode,
     doesCompile: api.hasPlugin('babel') || api.hasPlugin('typescript') ? true : false,
     usingBabel: api.hasPlugin('babel') ? true : false,
-    usingTS: api.hasPlugin('typescript') ? true : false
+    usingTS: api.hasPlugin('typescript') ? true : false,
+    isVue3: options.vueVersion === '3'
   };
 
   console.log('adding to package.json');
